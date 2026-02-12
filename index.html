@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 Winter Olympics Dashboard - Milano Cortina</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a1628;color:#e0e6ed;line-height:1.5}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+header{background:linear-gradient(135deg,#1a2744 0%,#0d1b33 100%);border-bottom:3px solid #2196F3;padding:20px;text-align:center;position:relative}
+header h1{font-size:2em;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.3)}
+header h1 span{color:#2196F3}
+.subtitle{color:#8899aa;margin-top:5px;font-size:.9em}
+.update-banner{background:#1a2744;border:1px solid #2a3a55;border-radius:8px;padding:12px 20px;margin:15px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.update-banner .timestamp{color:#8899aa;font-size:.85em}
+.update-banner a{color:#2196F3;text-decoration:none;font-weight:600;font-size:.85em}
+.update-banner a:hover{text-decoration:underline}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin:20px 0}
+.card{background:#111d32;border:1px solid #1e2d45;border-radius:12px;padding:20px;transition:border-color .2s}
+.card:hover{border-color:#2196F3}
+.card h2{color:#2196F3;font-size:1.1em;margin-bottom:15px;display:flex;align-items:center;gap:8px}
+.card.full-width{grid-column:1/-1}
+table{width:100%;border-collapse:collapse;font-size:.85em}
+th{background:#1a2744;color:#8899aa;padding:8px 10px;text-align:left;font-weight:600;text-transform:uppercase;font-size:.75em;letter-spacing:.5px}
+td{padding:8px 10px;border-bottom:1px solid #1a2744}
+tr:hover{background:#1a2744}
+tr.usa{background:rgba(33,150,243,.1);font-weight:700}
+tr.usa td{color:#fff}
+.gold{color:#FFD700}.silver{color:#C0C0C0}.bronze{color:#CD7F32}
+.medal-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px}
+.medal-dot.g{background:#FFD700}.medal-dot.s{background:#C0C0C0}.medal-dot.b{background:#CD7F32}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7em;font-weight:700;text-transform:uppercase}
+.badge.live{background:#e53935;color:#fff;animation:pulse 1.5s infinite}
+.badge.done{background:#2e7d32;color:#fff}
+.badge.upcoming{background:#1565c0;color:#fff}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.event-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a2744;gap:10px}
+.event-row:last-child{border-bottom:none}
+.event-time{color:#2196F3;font-weight:700;font-size:.85em;min-width:70px}
+.event-name{flex:1;font-size:.85em}
+.event-result{color:#8899aa;font-size:.8em;text-align:right;max-width:200px}
+.headline-item{padding:10px 0;border-bottom:1px solid #1a2744}
+.headline-item:last-child{border-bottom:none}
+.headline-item a{color:#e0e6ed;text-decoration:none;font-size:.9em;line-height:1.4}
+.headline-item a:hover{color:#2196F3;text-decoration:underline}
+.headline-num{color:#2196F3;font-weight:700;margin-right:8px}
+.headline-src{color:#556677;font-size:.75em;margin-left:5px}
+.athlete-card{display:flex;gap:15px;padding:12px 0;border-bottom:1px solid #1a2744}
+.athlete-card:last-child{border-bottom:none}
+.athlete-info h3{color:#fff;font-size:.95em;margin-bottom:3px}
+.athlete-info .sport{color:#2196F3;font-size:.8em;font-weight:600}
+.athlete-info .bio{color:#8899aa;font-size:.8em;margin-top:5px}
+.athlete-medals{display:flex;gap:5px;margin-top:5px}
+.mini-medal{padding:2px 6px;border-radius:3px;font-size:.7em;font-weight:700}
+.mini-medal.g{background:rgba(255,215,0,.15);color:#FFD700}
+.mini-medal.s{background:rgba(192,192,192,.15);color:#C0C0C0}
+.mini-medal.b{background:rgba(205,127,50,.15);color:#CD7F32}
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:10px}
+.toast{background:#1a2744;border:1px solid #2a3a55;border-radius:8px;padding:12px 16px;min-width:280px;box-shadow:0 4px 12px rgba(0,0,0,.4);animation:slideIn .4s;cursor:pointer}
+.toast.gold-toast{border-left:4px solid #FFD700}
+.toast.silver-toast{border-left:4px solid #C0C0C0}
+.toast.bronze-toast{border-left:4px solid #CD7F32}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast-title{font-weight:700;font-size:.85em;color:#fff}
+.toast-body{font-size:.8em;color:#8899aa;margin-top:3px}
+.section-divider{height:2px;background:linear-gradient(90deg,transparent,#2196F3,transparent);margin:30px 0}
+.auto-guide{background:#111d32;border:1px solid #1e2d45;border-radius:12px;padding:20px;margin-top:20px}
+.auto-guide h2{color:#2196F3;margin-bottom:10px}
+.auto-guide p{color:#8899aa;font-size:.85em;margin-bottom:8px}
+.auto-guide code{background:#1a2744;padding:2px 6px;border-radius:3px;color:#4fc3f7;font-size:.8em}
+@media(max-width:768px){header h1{font-size:1.4em}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<h1>&#9978; 2026 Winter Olympics <span>Milano Cortina</span></h1>
+<p class="subtitle">Day 6 Final Results &bull; February 12, 2026 &bull; 44 of 116 Medal Events Complete</p>
+</header>
+<div class="container">
+<div class="update-banner">
+<span class="timestamp">&#128339; Data snapshot: Feb 12, 2026 4:00 PM MST</span>
+<span><a href="https://www.olympics.com/en/milano-cortina-2026/medals" target="_blank">Live Medal Table &#8594;</a> &bull; <a href="https://www.espn.com/olympics/schedule" target="_blank">Live Schedule &#8594;</a></span>
+</div>
+
+<div class="grid">
+<div class="card">
+<h2>&#127941; Medal Count</h2>
+<table>
+<thead><tr><th>#</th><th>Country</th><th><span class="medal-dot g"></span>G</th><th><span class="medal-dot s"></span>S</th><th><span class="medal-dot b"></span>B</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>&#127470;&#127481; Italy</td><td class="gold">6</td><td class="silver">3</td><td class="bronze">8</td><td>17</td></tr>
+<tr><td>2</td><td>&#127475;&#127476; Norway</td><td class="gold">7</td><td class="silver">2</td><td class="bronze">5</td><td>14</td></tr>
+<tr class="usa"><td>3</td><td>&#127482;&#127480; USA</td><td class="gold">4</td><td class="silver">7</td><td class="bronze">3</td><td>14</td></tr>
+<tr><td>4</td><td>&#127480;&#127466; Sweden</td><td class="gold">4</td><td class="silver">3</td><td class="bronze">1</td><td>8</td></tr>
+<tr><td>5</td><td>&#127464;&#127469; Switzerland</td><td class="gold">4</td><td class="silver">1</td><td class="bronze">2</td><td>7</td></tr>
+<tr><td>6</td><td>&#127462;&#127481; Austria</td><td class="gold">3</td><td class="silver">3</td><td class="bronze">3</td><td>9</td></tr>
+<tr><td>7</td><td>&#127465;&#127466; Germany</td><td class="gold">3</td><td class="silver">1</td><td class="bronze">2</td><td>6</td></tr>
+<tr><td>8</td><td>&#127467;&#127479; France</td><td class="gold">1</td><td class="silver">4</td><td class="bronze">1</td><td>6</td></tr>
+<tr><td>9</td><td>&#127472;&#127479; South Korea</td><td class="gold">1</td><td class="silver">1</td><td class="bronze">1</td><td>3</td></tr>
+<tr><td>10</td><td>&#127464;&#127462; Canada</td><td class="gold">0</td><td class="silver">2</td><td class="bronze">3</td><td>5</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card">
+<h2>&#127942; USA Medal Breakdown by Sport</h2>
+<table>
+<thead><tr><th>Sport</th><th>Event</th><th>Medal</th><th>Athlete</th></tr></thead>
+<tbody>
+<tr><td>Speed Skating</td><td>1000m</td><td><span class="medal-dot g"></span>Gold</td><td>Jordan Stolz</td></tr>
+<tr><td>Speed Skating</td><td>5000m</td><td><span class="medal-dot g"></span>Gold</td><td>Jordan Stolz</td></tr>
+<tr><td>Freestyle</td><td>W Moguls</td><td><span class="medal-dot g"></span>Gold</td><td>Tess Lemley</td></tr>
+<tr><td>Alpine</td><td>W Downhill</td><td><span class="medal-dot g"></span>Gold</td><td>Breezy Johnson</td></tr>
+<tr><td>Snowboard</td><td>W Halfpipe</td><td><span class="medal-dot s"></span>Silver</td><td>Chloe Kim</td></tr>
+<tr><td>Freestyle</td><td>W Moguls</td><td><span class="medal-dot s"></span>Silver</td><td>Hannah Kauf</td></tr>
+<tr><td>Alpine</td><td>M Downhill</td><td><span class="medal-dot s"></span>Silver</td><td>Ryan Cochran-Siegle</td></tr>
+<tr><td>Fig. Skating</td><td>Ice Dance</td><td><span class="medal-dot s"></span>Silver</td><td>Chock / Bates</td></tr>
+<tr><td>Luge</td><td>M Singles</td><td><span class="medal-dot s"></span>Silver</td><td>Tucker West</td></tr>
+<tr><td>Short Track</td><td>W 500m</td><td><span class="medal-dot s"></span>Silver</td><td>Kristen Santos-Griswold</td></tr>
+<tr><td>Speed Skating</td><td>W 3000m</td><td><span class="medal-dot s"></span>Silver</td><td>Sammy McLeod</td></tr>
+<tr><td>XC Skiing</td><td>W 10km</td><td><span class="medal-dot b"></span>Bronze</td><td>Jessie Diggins</td></tr>
+<tr><td>Freestyle</td><td>Mixed Aerials</td><td><span class="medal-dot b"></span>Bronze</td><td>Team USA</td></tr>
+<tr><td>Snowboard</td><td>M Slopestyle</td><td><span class="medal-dot b"></span>Bronze</td><td>Dusty Henricksen</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="section-divider"></div>
+
+<div class="grid">
+<div class="card">
+<h2>&#128197; Day 6 Schedule - Feb 12 (All Times MST)</h2>
+<div class="event-row"><span class="event-time">3:30 AM</span><span class="event-name">Alpine: Women's Super-G</span><span class="badge done">Final</span><span class="event-result">Brignone (ITA) Gold</span></div>
+<div class="event-row"><span class="event-time">4:00 AM</span><span class="event-name">XC Skiing: Women's 10km Free</span><span class="badge done">Final</span><span class="event-result">Johaug (NOR) Gold</span></div>
+<div class="event-row"><span class="event-time">4:15 AM</span><span class="event-name">Freestyle: Men's Moguls Final</span><span class="badge done">Final</span><span class="event-result">Cooper Woods (AUS) Gold</span></div>
+<div class="event-row"><span class="event-time">5:00 AM</span><span class="event-name">Short Track: Women's 500m Final</span><span class="badge done">Final</span><span class="event-result">Velzeboer (NED) Gold</span></div>
+<div class="event-row"><span class="event-time">5:45 AM</span><span class="event-name">Snowboard: Men's Cross Final</span><span class="badge done">Final</span><span class="event-result">Haemmerle (AUT) Gold</span></div>
+<div class="event-row"><span class="event-time">6:00 AM</span><span class="event-name">Speed Skating: Women's 5000m</span><span class="badge done">Final</span><span class="event-result">Lollobrigida (ITA) Gold</span></div>
+<div class="event-row"><span class="event-time">7:30 AM</span><span class="event-name">Snowboard: Women's Halfpipe Final</span><span class="badge done">Final</span><span class="event-result">Choi Gaon (KOR) Gold</span></div>
+<div class="event-row"><span class="event-time">8:00 AM</span><span class="event-name">Luge: Team Relay</span><span class="badge done">Final</span><span class="event-result">Germany Gold (4th straight)</span></div>
+<div class="event-row"><span class="event-time">8:30 AM</span><span class="event-name">Skeleton: Men's Runs 1-2</span><span class="badge done">Done</span><span class="event-result">Weston (GBR) leads</span></div>
+<div class="event-row"><span class="event-time">1:10 PM</span><span class="event-name">Hockey: USA vs Latvia (Men's)</span><span class="badge done">Final</span><span class="event-result">USA wins 5-1</span></div>
+</div>
+
+<div class="card">
+<h2>&#128640; Upcoming Events - Day 7 (Feb 13)</h2>
+<div class="event-row"><span class="event-time">3:00 AM</span><span class="event-name">Biathlon: Men's 10km Sprint</span><span class="badge upcoming">Medal</span></div>
+<div class="event-row"><span class="event-time">4:00 AM</span><span class="event-name">XC Skiing: Men's 10km Free</span><span class="badge upcoming">Medal</span></div>
+<div class="event-row"><span class="event-time">4:30 AM</span><span class="event-name">Snowboard: Women's Cross Final</span><span class="badge upcoming">Medal</span></div>
+<div class="event-row"><span class="event-time">5:45 AM</span><span class="event-name">Figure Skating: Men's Free Skate</span><span class="badge upcoming">Medal</span></div>
+<div class="event-row"><span class="event-time">6:00 AM</span><span class="event-name">Skeleton: Men's Final Runs 3-4</span><span class="badge upcoming">Medal</span></div>
+<div class="event-row"><span class="event-time">8:10 AM</span><span class="event-name">Hockey: USA vs Italy (Women's QF)</span><span class="badge upcoming">QF</span></div>
+<div class="event-row"><span class="event-time">11:00 AM</span><span class="event-name">Skeleton: Women's Runs 1-2</span><span class="badge upcoming">Heats</span></div>
+<div class="event-row"><span class="event-time">12:00 PM</span><span class="event-name">Curling: Canada vs USA (Men's)</span><span class="badge upcoming">Round Robin</span></div>
+<p style="color:#8899aa;font-size:.8em;margin-top:12px;padding-top:8px;border-top:1px solid #1a2744"><strong>Day 8 (Feb 14):</strong> Alpine Combined, Biathlon W Sprint, Pairs Figure Skating, Snowboard M Halfpipe Final</p>
+<p style="color:#8899aa;font-size:.8em;margin-top:5px"><strong>Day 9 (Feb 15):</strong> Ski Jumping Large Hill, W Skeleton Final, Speed Skating M 10000m, XC Skiing Relay</p>
+</div>
+</div>
+
+<div class="section-divider"></div>
+
+<div class="grid">
+<div class="card full-width">
+<h2>&#128240; Top 10 Olympic Headlines</h2>
+<div class="headline-item"><span class="headline-num">1.</span><a href="https://www.nbcolympics.com/news/live/2026-winter-olympics-live-updates-feb-12-highlights-scores-results-day-6" target="_blank">17-year-old Choi Gaon stuns Chloe Kim to win halfpipe gold; Kim takes silver</a><span class="headline-src">NBC Olympics</span></div>
+<div class="headline-item"><span class="headline-num">2.</span><a href="https://www.cbssports.com/olympics/news/winter-olympics-2026-live-updates-day-6-results-highlights/live/" target="_blank">Italy's Brignone wins Super-G gold on home snow; Breezy Johnson crashes out</a><span class="headline-src">CBS Sports</span></div>
+<div class="headline-item"><span class="headline-num">3.</span><a href="https://ca.news.yahoo.com/2026-winter-olympics-day-6-recap-sarault-kingsbury-grondin-win-medals-for-team-canada" target="_blank">Australia's Cooper Woods upsets Mikael Kingsbury for moguls gold</a><span class="headline-src">Yahoo Sports</span></div>
+<div class="headline-item"><span class="headline-num">4.</span><a href="https://www.latimes.com/sports/olympics/live/milan-cortina-2026-live-winter-olympics-day-6-medal-count-results-highlights" target="_blank">Germany wins 4th consecutive Olympic luge team relay gold</a><span class="headline-src">LA Times</span></div>
+<div class="headline-item"><span class="headline-num">5.</span><a href="https://www.usatoday.com/story/sports/olympics/2026/02/12/winter-olympics-medal-count-after-feb-12/88650354007/" target="_blank">Italy surges to 17 medals, leads total count as host nation dominates</a><span class="headline-src">USA Today</span></div>
+<div class="headline-item"><span class="headline-num">6.</span><a href="https://www.olympics.com/en/milano-cortina-2026/news/winter-olympics-highlights-daily-results-12-february" target="_blank">Jessie Diggins guts out bronze in women's 10km - medals in 3rd straight Olympics</a><span class="headline-src">Olympics.com</span></div>
+<div class="headline-item"><span class="headline-num">7.</span><a href="https://www.olympics.com/en/milano-cortina-2026/news/winter-olympics-2026-how-to-watch-team-usa-live-full-schedule-and-medal-eve" target="_blank">Ilia Malinin leads men's figure skating heading into Friday free skate</a><span class="headline-src">Olympics.com</span></div>
+<div class="headline-item"><span class="headline-num">8.</span><a href="https://www.espn.com/olympics/story/_/id/47909375/2026-winter-olympics-february-13-schedule-milan-cortina-events" target="_blank">NHL stars shine as USA men's hockey routs Latvia 5-1 in opener</a><span class="headline-src">ESPN</span></div>
+<div class="headline-item"><span class="headline-num">9.</span><a href="https://www.latimes.com/sports/olympics/live/milan-cortina-2026-live-winter-olympics-day-6-medal-count-results-highlights" target="_blank">Lollobrigida wins 5000m by 0.1 seconds - Italy's speed skating queen</a><span class="headline-src">LA Times</span></div>
+<div class="headline-item"><span class="headline-num">10.</span><a href="https://ca.news.yahoo.com/2026-winter-olympics-day-6-recap-sarault-kingsbury-grondin-win-medals-for-team-canada" target="_blank">Austria's Haemmerle defends snowboard cross gold by 0.03 seconds</a><span class="headline-src">Yahoo Sports</span></div>
+</div>
+</div>
+
+<div class="section-divider"></div>
+
+<div class="grid">
+<div class="card full-width">
+<h2>&#127482;&#127480; USA Olympic Athletes</h2>
+<div class="athlete-card">
+<div class="athlete-info">
+<h3>Jordan Stolz</h3>
+<span class="sport">Speed Skating</span>
+<div class="athlete-medals"><span class="mini-medal g">2x GOLD</span></div>
+<p class="bio">20-year-old from Kewaskum, WI. Won 1000m and 5000m gold. Youngest American to win Olympic speed skating gold. World record holder.</p>
+</div>
+</div>
+<div class="athlete-card">
+<div class="athlete-info">
+<h3>Chloe Kim</h3>
+<span class="sport">Snowboard Halfpipe</span>
+<div class="athlete-medals"><span class="mini-medal s">SILVER</span></div>
+<p class="bio">25-year-old from Torrance, CA. Two-time Olympic champion (2018, 2022). Took silver after upset by 17-year-old Choi Gaon. Competed through shoulder injury.</p>
+</div>
+</div>
+<div class="athlete-card">
+<div class="athlete-info">
+<h3>Tess Lemley</h3>
+<span class="sport">Freestyle Moguls</span>
+<div class="athlete-medals"><span class="mini-medal g">GOLD</span></div>
+<p class="bio">Dominated women's moguls for Team USA's first freestyle gold of these Games. Led a strong American showing in the event.</p>
+</div>
+</div>
+<div class="athlete-card">
+<div class="athlete-info">
+<h3>Breezy Johnson</h3>
+<span class="sport">Alpine Skiing</span>
+<div class="athlete-medals"><span class="mini-medal g">GOLD</span></div>
+<p class="bio">Won women's downhill gold earlier in the Games. DNF in Super-G on Day 6 amid difficult snowy and foggy conditions that saw 17 skiers fail to finish.</p>
+</div>
+</div>
+<div class="athlete-card">
+<div class="athlete-info">
+<h3>Jessie Diggins</h3>
+<span class="sport">Cross-Country Skiing</span>
+<div class="athlete-medals"><span class="mini-medal b">BRONZE</span></div>
+<p class="bio">From Afton, MN. Bronze in women's 10km free. Has medaled in three consecutive Winter Olympics (2018 gold, 2022 silver, 2026 bronze).</p>
+</div>
+</div>
+<div class="athlete-card">
+<div class="athlete-info">
+<h3>Madison Chock &amp; Evan Bates</h3>
+<span class="sport">Figure Skating - Ice Dance</span>
+<div class="athlete-medals"><span class="mini-medal s">SILVER</span></div>
+<p class="bio">Married couple and three-time World champions. Won silver in ice dance in what may be their final Olympic appearance together.</p>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- end container -->
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+function showToast(title,body,type){var c=document.getElementById('toasts');var t=document.createElement('div');t.className='toast '+type+'-toast';t.innerHTML='<div class="toast-title">'+title+'</div><div class="toast-body">'+body+'</div>';c.appendChild(t);t.onclick=function(){t.remove()};setTimeout(function(){t.remove()},10000)}
+var notifications=[
+{title:'SILVER - W Halfpipe',body:'Chloe Kim (USA) takes silver; Choi Gaon (KOR) wins gold',type:'silver',delay:15000},
+{title:'GOLD - W Super-G',body:'Federica Brignone (ITA) wins on home snow',type:'gold',delay:30000},
+{title:'GOLD - Luge Team Relay',body:'Germany wins 4th consecutive Olympic gold',type:'gold',delay:45000},
+{title:'Refresh Reminder',body:'Data may be outdated. Click Live Medal Table link above to check latest.',type:'silver',delay:180000}
+];
+notifications.forEach(function(n){setTimeout(function(){showToast(n.title,n.body,n.type)},n.delay)});
+</script>
+</body>
+</html>
