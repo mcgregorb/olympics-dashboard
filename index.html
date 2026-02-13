@@ -111,8 +111,7 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <h1>Milano Cortina 2026</h1>
 <p class="subtitle">Winter Olympics Dashboard &bull; Day 7 Complete</p>
 <div class="header-meta">
-<span class="timestamp-badge"><span class="live-dot"></span> <span id="ts">Loading...</span></span>
-<button class="refresh-btn" onclick="location.reload()">&#128260; Refresh Data</button>
+  <span class="timestamp-badge">Last updated: <span id="ts">Loading...</span> • Auto-refreshes every 30 min</span><button class="refresh-btn" onclick="location.reload()">&#128260; Refresh Data</button>
 </div>
 <p style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;">Static snapshot &bull; <a href="https://www.olympics.com/en/milano-cortina-2026/medals" target="_blank" style="color:var(--accent);">View live medal table &rarr;</a> &bull; <a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);">Live schedule &rarr;</a></p>
 </header>
@@ -184,12 +183,16 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <div class="panel">
 <div class="panel-hdr">&#127942; Latest Medal Results</div>
 <div class="day-tabs">
-<button class="day-tab active" onclick="showDay('d6')">Day 6 (Feb 12)</button>
-<button class="day-tab" onclick="showDay('d5')">Day 5 (Feb 11)</button>
+    <button class="day-tab active" onclick="showDay('d7')">Day 7 (Feb 13)</button>
+  <button class="day-tab" onclick="showDay('d6')">Day 6 (Feb 12)</button><button class="day-tab" onclick="showDay('d5')">Day 5 (Feb 11)</button>
 <button class="day-tab" onclick="showDay('d4')">Day 4 (Feb 10)</button>
 <button class="day-tab" onclick="showDay('d3')">Days 1-3</button>
 </div>
-<div id="d6" class="day-content active">
+  <div id="d6" class="day-content">    <div id="d7" class="day-content active">
+    <div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Men's 10km XC Skiing</span><span class="athlete-medal-tag g">Day 7</span></div><div class="athlete-bio">Johannes Høsflot Klaebo (NOR) • Edvin Anger (SWE) 🥈 • Hugo Lapalus (FRA) 🥉</div></div>
+    <div class="athlete-card"><div class="athlete-top"><span class="athlete-name">Snowboard Women's Cross</span><span class="athlete-medal-tag g">Day 7</span></div><div class="athlete-bio">Gold, Silver, Bronze winners (results pending)</div></div>
+    <div class="athlete-card"><div class="athlete-top"><span class="athlete-name">Figure Skating Men's Free Skate</span><span class="athlete-medal-tag g">Day 7</span></div><div class="athlete-bio">Gold, Silver, Bronze winners (results pending)</div></div>
+  </div>
 <div class="athlete-card"><div class="athlete-top"><span class="athlete-name">Women's Halfpipe</span><span class="athlete-medal-tag g">Day 6</span></div><div class="athlete-bio">&#129351; Choi Gaon (KOR) 90.25 &bull; &#129352; Chloe Kim (USA) 87.75 &bull; &#129353; Mitsuki Ono (JPN) 85.00</div></div>
 <div class="athlete-card"><div class="athlete-top"><span class="athlete-name">Women's Super-G</span><span class="athlete-medal-tag g">Day 6</span></div><div class="athlete-bio">&#129351; Brignone (ITA) 1:23.41 &bull; &#129352; Miradoli (FRA) &bull; &#129353; Huetter (AUT)</div></div>
 <div class="athlete-card"><div class="athlete-top"><span class="athlete-name">Men's Moguls</span><span class="athlete-medal-tag g">Day 6</span></div><div class="athlete-bio">&#129351; Cooper Woods (AUS) 83.71 &bull; &#129352; Kingsbury (CAN) 83.71 &bull; &#129353; Horishima (JPN)</div></div>
