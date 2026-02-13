@@ -2,7 +2,7 @@ name: Update Olympics Dashboard
 
 on:
   schedule:
-    - cron: '0 */2 * * *'
+        - cron: '*/30 * * * *'  # Runs every 30 minutes
   workflow_dispatch:
 
 permissions:
