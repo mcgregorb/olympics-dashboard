@@ -28,8 +28,7 @@ h1 { font-size: 2rem; color: var(--accent); font-weight: 800; }
 .panel-hdr { font-size: 1.15rem; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--bg-muted); display: flex; align-items: center; gap: 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 th { background: var(--bg-muted); padding: 8px 10px; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; }
-td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
-tr:hover td { background: rgba(56,189,248,0.04); }
+.panel { background: var(--bg-card); border: 1px solid var(--bg-muted); border-radius: 10px; padding: 20px; overflow-y: auto; max-height: 600px; }tr:hover td { background: rgba(56,189,248,0.04); }
 .rk { color: var(--accent); font-weight: 700; width: 36px; }
 .g { color: var(--gold); font-weight: 700; }
 .s { color: var(--silver); font-weight: 700; }
@@ -155,8 +154,7 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <div class="evt live-now"><span class="evt-time">6:10 AM</span><div class="evt-info"><div class="evt-name">Hockey: Finland vs Sweden (M)</div><div class="evt-detail"><span class="badge badge-live">LIVE</span></div></div></div>
 <div class="evt live-now"><span class="evt-time">6:10 AM</span><div class="evt-info"><div class="evt-name">Hockey: Italy vs Slovakia (M)</div><div class="evt-detail"><span class="badge badge-live">LIVE</span></div></div></div>
 <div class="evt medal-evt"><span class="evt-time">7:30 AM</span><div class="evt-info"><div class="evt-name">Snowboard: Women's Cross Finals</div><div class="evt-detail"><span class="badge badge-medal">MEDAL</span></div></div></div>
-<div class="evt medal-evt"><span class="evt-time">8:00 AM</span><div class="evt-info"><div class="evt-name">Biathlon: Men's 10km Sprint</div><div class="evt-detail"><span class="badge badge-medal">MEDAL</span></div></div></div>
-<div class="evt"><span class="evt-time">8:05 AM</span><div class="evt-info"><div class="evt-name">Curling: USA vs Canada (W)</div><div class="evt-detail"><span class="badge badge-upcoming">ROUND ROBIN</span></div></div></div>
+  <div class="evt done medal-evt"><span class="evt-time">5:45 AM</span><div class="evt-info"><div class="evt-name">XC Skiing: Men's 10km Free</div><div class="evt-detail">🥇 Johannes Høsflot Klaebo (NOR) • 🥈 Edvin Anger (SWE) • 🥉 Hugo Lapalus (FRA)</div></div><span class="badge badge-done">COMPLETE</span></div><div class="evt"><span class="evt-time">8:05 AM</span><div class="evt-info"><div class="evt-name">Curling: USA vs Canada (W)</div><div class="evt-detail"><span class="badge badge-upcoming">ROUND ROBIN</span></div></div></div>
 <div class="evt medal-evt"><span class="evt-time">10:00 AM</span><div class="evt-info"><div class="evt-name">Speed Skating: Men's 10,000m</div><div class="evt-detail"><span class="badge badge-medal">MEDAL</span></div></div></div>
 <div class="evt medal-evt"><span class="evt-time">10:00 AM</span><div class="evt-info"><div class="evt-name">Skeleton: Women's Runs 1-2</div><div class="evt-detail"><span class="badge badge-upcoming">HEATS</span></div></div></div>
 <div class="evt medal-evt"><span class="evt-time">12:45 PM</span><div class="evt-info"><div class="evt-name">Figure Skating: Men's Free Skate</div><div class="evt-detail"><span class="badge badge-medal">MEDAL</span></div></div></div>
