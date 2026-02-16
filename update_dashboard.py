@@ -1,22 +1,22 @@
 """
 Olympics Dashboard Auto-Updater
 ===============================
-Called by GitHub Actions every 30 minutes. Uses a hybrid data approach:
-  - Wikipedia API for medal table (reliable, structured HTML)
-  - Perplexity Sonar API for dynamic content (schedule, headlines, videos)
+Called by GitHub Actions every 30 minutes. Uses structured data sources:
+  - Wikipedia API for medal table, medal winners, USA breakdown, country details, results
+  - Google News RSS for headlines (no API key needed)
+  - YouTube Data API v3 for video highlights (YOUTUBE_API_KEY)
+  - Perplexity Sonar API for schedule + upcoming events ONLY (PERPLEXITY_API_KEY)
   - Hardcoded data for athletes and as last-resort fallbacks
 
-Sections updated:
-  1. Medal count table (top 15 countries, sorted by gold) — Wikipedia
-  2. Today's schedule with results — Perplexity
-  3. USA medal breakdown by sport — Hardcoded + Perplexity
-  4. Latest medal results (day tabs for last 3 days) — Perplexity
-  5. Headlines (top 10) — Perplexity
-  6. YouTube video highlights (10 cards) — Perplexity
-  7. USA athlete spotlights — Hardcoded (authoritative)
-  8. Upcoming events with individual reminder buttons — Perplexity
-  9. Stats row (events today, events completed, days remaining)
-  10. Notifications (date-aware, keyed to DASHBOARD_DATA_DATE)
+Data flow:
+  1. Medal table — Wikipedia '2026 Winter Olympics medal table'
+  2. Medal winners — Wikipedia 'List of 2026 Winter Olympics medal winners'
+     -> Derived: USA breakdown, country details, latest results
+  3. Headlines — Google News RSS (feedparser)
+  4. Videos — YouTube Data API v3 search
+  5. Schedule — Perplexity (olympics.com blocks scraping)
+  6. Upcoming events — Perplexity (same reason)
+  7. Athletes — Hardcoded (authoritative, rarely changes)
 """
 
 import os
@@ -267,7 +267,392 @@ def scrape_medal_table():
     return result
 
 
-# ── Perplexity API ────────────────────────────────────────────────────────
+# ── Wikipedia Medal Winners Scraper ───────────────────────────────────────
+
+def scrape_medal_winners():
+    """Parse 'List of 2026 Winter Olympics medal winners' from Wikipedia.
+
+    Returns a list of dicts: [{'sport': 'Alpine Skiing', 'event': "Men's Downhill",
+    'gold': 'Name (CODE)', 'silver': 'Name (CODE)', 'bronze': 'Name (CODE)'}]
+    """
+    import requests
+    from bs4 import BeautifulSoup
+
+    resp = requests.get(WIKI_API, params={
+        'action': 'parse',
+        'page': 'List of 2026 Winter Olympics medal winners',
+        'format': 'json',
+        'prop': 'text',
+    }, timeout=30, headers={'User-Agent': 'OlympicsDashboard/1.0'})
+    resp.raise_for_status()
+    html = resp.json().get('parse', {}).get('text', {}).get('*', '')
+    if not html:
+        raise ValueError('Empty Wikipedia medal winners response')
+
+    soup = BeautifulSoup(html, 'lxml')
+    results = []
+    current_sport = ''
+
+    # Wikipedia structures this as multiple tables, one per sport, each preceded by an h3/h2 heading
+    for heading in soup.find_all(['h2', 'h3']):
+        span = heading.find('span', class_='mw-headline')
+        if not span:
+            continue
+        sport_name = span.get_text(strip=True)
+        # Skip non-sport headings like "References", "See also", etc.
+        if sport_name in ('References', 'See also', 'Notes', 'External links', 'Contents'):
+            continue
+
+        # Find the next wikitable after this heading
+        table = heading.find_next('table', class_='wikitable')
+        if not table:
+            continue
+
+        for row in table.find_all('tr'):
+            cells = row.find_all(['td', 'th'])
+            if len(cells) < 4:
+                continue
+            # Skip header rows
+            if row.find('th') and not row.find('td'):
+                continue
+
+            texts = [c.get_text(strip=True) for c in cells]
+            # Typical format: Event | Gold | Silver | Bronze (sometimes with country flags/links)
+            # The first cell with substantive text is the event, then G, S, B
+            event = texts[0] if texts[0] else ''
+            if not event or event.startswith('Event') or event.startswith('Discipline'):
+                continue
+
+            # Extract medalists — try to get text with country codes
+            def extract_medalist(cell):
+                """Extract 'Name (CODE)' from a table cell that may contain links and flag images."""
+                # Get all text, replacing <br> with separator
+                for br in cell.find_all('br'):
+                    br.replace_with(' | ')
+                text = cell.get_text(strip=True)
+                # Clean up common Wikipedia artifacts
+                text = re.sub(r'\[.*?\]', '', text)  # Remove footnotes
+                text = re.sub(r'\xa0', ' ', text)
+                return text.strip()
+
+            gold = extract_medalist(cells[1]) if len(cells) > 1 else ''
+            silver = extract_medalist(cells[2]) if len(cells) > 2 else ''
+            bronze = extract_medalist(cells[3]) if len(cells) > 3 else ''
+
+            if gold or silver or bronze:
+                results.append({
+                    'sport': sport_name,
+                    'event': event,
+                    'gold': gold,
+                    'silver': silver,
+                    'bronze': bronze,
+                })
+
+    if not results:
+        raise ValueError('Could not parse any medal winners from Wikipedia')
+
+    print(f'  \u2713 Wikipedia medal winners: parsed {len(results)} events across {len(set(r["sport"] for r in results))} sports')
+    return results
+
+
+def derive_usa_breakdown(medal_winners):
+    """Derive USA medal breakdown by sport from the full medal winners list."""
+    sport_medals = {}
+    for r in medal_winners:
+        sport = r['sport']
+        if sport not in sport_medals:
+            sport_medals[sport] = {'sport': sport, 'gold': 0, 'silver': 0, 'bronze': 0}
+        # Check if USA/United States appears in each medal position
+        if re.search(r'\bUSA\b|\bUnited States\b', r.get('gold', '')):
+            sport_medals[sport]['gold'] += 1
+        if re.search(r'\bUSA\b|\bUnited States\b', r.get('silver', '')):
+            sport_medals[sport]['silver'] += 1
+        if re.search(r'\bUSA\b|\bUnited States\b', r.get('bronze', '')):
+            sport_medals[sport]['bronze'] += 1
+
+    # Filter to sports where USA has at least one medal
+    sports = [s for s in sport_medals.values() if s['gold'] + s['silver'] + s['bronze'] > 0]
+    sports.sort(key=lambda s: (s['gold'], s['silver'], s['bronze']), reverse=True)
+
+    total_g = sum(s['gold'] for s in sports)
+    total_s = sum(s['silver'] for s in sports)
+    total_b = sum(s['bronze'] for s in sports)
+
+    return {
+        'sports': sports,
+        'total_gold': total_g,
+        'total_silver': total_s,
+        'total_bronze': total_b,
+        'total': total_g + total_s + total_b,
+    }
+
+
+def derive_country_details(medal_winners):
+    """Derive per-country medal event details from the full winners list."""
+    countries = {}
+    for r in medal_winners:
+        for medal_type in ['gold', 'silver', 'bronze']:
+            text = r.get(medal_type, '')
+            # Extract country codes like (NOR), (USA), (ITA) from medalist text
+            codes = re.findall(r'\b([A-Z]{3})\b', text)
+            for code in codes:
+                if code not in countries:
+                    countries[code] = {'country': '', 'code': code, 'events': []}
+                # Reverse-lookup country name
+                for name, c in COUNTRY_CODES.items():
+                    if c == code:
+                        countries[code]['country'] = name
+                        break
+                countries[code]['events'].append({
+                    'event': f'{r["sport"]} - {r["event"]}',
+                    'medal': medal_type,
+                    'athlete': text,
+                })
+
+    return {'countries': list(countries.values())}
+
+
+def derive_latest_results(medal_winners, day_num):
+    """Derive the latest 3 days of results from the medal winners list.
+
+    This is approximate — Wikipedia doesn't always include dates in the medal winners table.
+    We return all results grouped as "recent" since we can't reliably assign days.
+    """
+    now = datetime.now(MST)
+
+    # We'll try to parse chronological summary for day-specific data
+    # But as a baseline, return all results as the current day
+    # The medal table is cumulative, so all listed events are completed
+    all_results = []
+    for r in medal_winners:
+        all_results.append({
+            'event': f'{r["sport"]} - {r["event"]}',
+            'gold': r.get('gold', 'TBD'),
+            'silver': r.get('silver', 'TBD'),
+            'bronze': r.get('bronze', 'TBD'),
+        })
+
+    # Try to get day-specific data from chronological summary
+    try:
+        day_results = scrape_chronological_results(day_num)
+        if day_results:
+            return day_results
+    except Exception as e:
+        print(f'  ! Chronological summary scrape failed: {e}')
+
+    # Fallback: show most recent results (last N events) as today,
+    # and earlier events as previous days
+    events_per_day = max(1, len(all_results) // max(1, day_num))
+    days = []
+    for i in range(3):
+        d = day_num - i
+        if d < 1:
+            break
+        date_str = (now - timedelta(days=i)).strftime('%b %d')
+        start = max(0, len(all_results) - events_per_day * (i + 1))
+        end = len(all_results) - events_per_day * i
+        day_events = all_results[start:end] if start < end else []
+        if day_events:
+            days.append({'day_num': d, 'date': date_str, 'results': day_events})
+
+    return {'days': days} if days else {'days': []}
+
+
+def scrape_chronological_results(day_num):
+    """Try to get day-specific medal results from Wikipedia chronological summary."""
+    import requests
+    from bs4 import BeautifulSoup
+
+    resp = requests.get(WIKI_API, params={
+        'action': 'parse',
+        'page': 'Chronological summary of the 2026 Winter Olympics',
+        'format': 'json',
+        'prop': 'text|sections',
+    }, timeout=30, headers={'User-Agent': 'OlympicsDashboard/1.0'})
+    resp.raise_for_status()
+
+    data = resp.json().get('parse', {})
+    sections = data.get('sections', [])
+    html = data.get('text', {}).get('*', '')
+
+    if not html:
+        return None
+
+    soup = BeautifulSoup(html, 'lxml')
+    now = datetime.now(MST)
+    days = []
+
+    for i in range(3):
+        d = day_num - i
+        if d < 1:
+            break
+        date_str = (now - timedelta(days=i)).strftime('%b %d')
+        target_date = (now - timedelta(days=i))
+
+        # Find section for this day — look for headings like "Day 11 (February 16)"
+        day_heading = None
+        for heading in soup.find_all(['h2', 'h3']):
+            text = heading.get_text(strip=True)
+            if f'Day {d}' in text or target_date.strftime('%B %d') in text or target_date.strftime('%-d %B') in text:
+                day_heading = heading
+                break
+
+        if not day_heading:
+            continue
+
+        # Find medal events listed under this day heading
+        results = []
+        elem = day_heading.find_next_sibling()
+        while elem and elem.name not in ['h2', 'h3']:
+            if elem.name == 'table' and 'wikitable' in elem.get('class', []):
+                for row in elem.find_all('tr'):
+                    cells = row.find_all(['td'])
+                    if len(cells) >= 4:
+                        event = cells[0].get_text(strip=True)
+                        gold = cells[1].get_text(strip=True)
+                        silver = cells[2].get_text(strip=True)
+                        bronze = cells[3].get_text(strip=True)
+                        if event and gold:
+                            results.append({
+                                'event': event,
+                                'gold': re.sub(r'\[.*?\]', '', gold),
+                                'silver': re.sub(r'\[.*?\]', '', silver),
+                                'bronze': re.sub(r'\[.*?\]', '', bronze),
+                            })
+            elif elem.name in ['ul', 'dl']:
+                # Some days list medal events in list format
+                for li in elem.find_all('li'):
+                    text = li.get_text(strip=True)
+                    # Look for medal emoji patterns
+                    if '\U0001f947' in text or 'gold' in text.lower() or 'medal' in text.lower():
+                        results.append({
+                            'event': text[:80],
+                            'gold': '', 'silver': '', 'bronze': '',
+                        })
+            elem = elem.find_next_sibling()
+
+        if results:
+            days.append({'day_num': d, 'date': date_str, 'results': results})
+
+    return {'days': days} if days else None
+
+
+# ── Google News RSS ──────────────────────────────────────────────────────
+
+def get_headlines_rss():
+    """Fetch Olympics headlines from Google News RSS. No API key needed."""
+    import feedparser
+
+    feed_url = 'https://news.google.com/rss/search?q=2026+Winter+Olympics&hl=en-US&gl=US&ceid=US:en'
+    feed = feedparser.parse(feed_url)
+
+    if not feed.entries:
+        raise ValueError('Google News RSS returned no entries')
+
+    headlines = []
+    for entry in feed.entries[:10]:
+        # Parse publication date
+        pub_date = ''
+        if hasattr(entry, 'published_parsed') and entry.published_parsed:
+            from time import mktime
+            dt = datetime.fromtimestamp(mktime(entry.published_parsed))
+            pub_date = dt.strftime('%b %d')
+
+        # Extract source name
+        source = ''
+        if hasattr(entry, 'source') and hasattr(entry.source, 'title'):
+            source = entry.source.title
+        elif ' - ' in entry.title:
+            # Google News sometimes appends source to title
+            parts = entry.title.rsplit(' - ', 1)
+            if len(parts) == 2:
+                source = parts[1].strip()
+
+        headlines.append({
+            'title': entry.title.rsplit(' - ', 1)[0].strip() if ' - ' in entry.title else entry.title,
+            'source': source,
+            'url': entry.link,
+            'date': pub_date,
+        })
+
+    print(f'  \u2713 Google News RSS: got {len(headlines)} headlines')
+    return {'headlines': headlines}
+
+
+# ── YouTube Data API ─────────────────────────────────────────────────────
+
+def get_video_highlights_youtube():
+    """Fetch Olympics video highlights from YouTube Data API v3."""
+    yt_key = os.environ.get('YOUTUBE_API_KEY')
+    if not yt_key:
+        raise ValueError('YOUTUBE_API_KEY not set')
+
+    import requests as req
+
+    # Search for recent Olympics highlight videos
+    params = {
+        'part': 'snippet',
+        'q': '2026 Winter Olympics highlights',
+        'type': 'video',
+        'order': 'date',
+        'maxResults': 10,
+        'publishedAfter': (datetime.now(MST) - timedelta(days=14)).strftime('%Y-%m-%dT00:00:00Z'),
+        'key': yt_key,
+    }
+    resp = req.get('https://www.googleapis.com/youtube/v3/search', params=params, timeout=30)
+    resp.raise_for_status()
+    items = resp.json().get('items', [])
+
+    if not items:
+        raise ValueError('YouTube API returned no videos')
+
+    # Sport emoji mapping based on title keywords
+    sport_emojis = {
+        'skating': '\u26f8\ufe0f', 'skate': '\u26f8\ufe0f', 'figure': '\u26f8\ufe0f',
+        'hockey': '\U0001f3d2', 'ski': '\u26f7\ufe0f', 'alpine': '\u26f7\ufe0f',
+        'slalom': '\u26f7\ufe0f', 'downhill': '\u26f7\ufe0f',
+        'snowboard': '\U0001f3c2', 'halfpipe': '\U0001f3c2',
+        'bobsled': '\U0001f6f7', 'luge': '\U0001f6f7', 'skeleton': '\U0001f6f7',
+        'biathlon': '\U0001f3bf', 'cross-country': '\U0001f3bf', 'nordic': '\U0001f3bf',
+        'curling': '\U0001f94c',
+    }
+
+    videos = []
+    for item in items:
+        snippet = item.get('snippet', {})
+        title = snippet.get('title', '')
+        video_id = item.get('id', {}).get('videoId', '')
+
+        # Determine sport emoji from title
+        emoji = '\U0001f3d4\ufe0f'  # default mountain
+        for keyword, em in sport_emojis.items():
+            if keyword in title.lower():
+                emoji = em
+                break
+
+        # Parse publish date
+        pub = snippet.get('publishedAt', '')
+        pub_date = ''
+        if pub:
+            try:
+                dt = datetime.fromisoformat(pub.replace('Z', '+00:00'))
+                pub_date = dt.strftime('%b %d')
+            except (ValueError, TypeError):
+                pass
+
+        videos.append({
+            'title': title,
+            'url': f'https://www.youtube.com/watch?v={video_id}',
+            'source': snippet.get('channelTitle', 'YouTube'),
+            'emoji': emoji,
+            'date': pub_date,
+        })
+
+    print(f'  \u2713 YouTube API: got {len(videos)} videos')
+    return {'videos': videos}
+
+
+# ── Perplexity API (schedule + upcoming only) ────────────────────────────
 
 def query_perplexity(prompt, max_tokens=4000):
     """Call Perplexity Sonar API and return parsed JSON."""
@@ -295,35 +680,6 @@ def query_perplexity(prompt, max_tokens=4000):
     return json.loads(content)
 
 
-def query_perplexity_validated(prompt, validator, corrective_prompt_fn, max_tokens=4000, max_retries=2):
-    """Query Perplexity with validation and retry.
-
-    Args:
-        prompt: Initial prompt
-        validator: Function(data) -> (is_valid: bool, error_msg: str)
-        corrective_prompt_fn: Function(data, error_msg) -> new_prompt
-        max_tokens: Token limit
-        max_retries: Number of retry attempts
-    Returns:
-        Validated data dict, or raises on total failure
-    """
-    data = query_perplexity(prompt, max_tokens)
-    is_valid, error_msg = validator(data)
-    if is_valid:
-        return data
-
-    for attempt in range(max_retries):
-        print(f'    Retry {attempt+1}: {error_msg}')
-        retry_prompt = corrective_prompt_fn(data, error_msg)
-        data = query_perplexity(retry_prompt, max_tokens)
-        is_valid, error_msg = validator(data)
-        if is_valid:
-            return data
-
-    # Return last attempt even if not perfect — fallback logic handles the rest
-    print(f'    Validation still failing after {max_retries} retries: {error_msg}')
-    return data
-
 
 # ── Data Fetchers ──────────────────────────────────────────────────────────
 
@@ -335,18 +691,12 @@ def _today_str():
 
 
 def get_medal_table():
-    """Primary: Wikipedia scrape. Fallback: Perplexity API."""
-    try:
-        return scrape_medal_table()
-    except Exception as e:
-        print(f'  ! Wikipedia scrape failed: {e}, trying Perplexity...')
-        today = _today_str()
-        return query_perplexity(f"""Today is {today}. Get the current 2026 Milano Cortina Winter Olympics medal count as of today for the top 15 countries sorted by gold medals (then silver as tiebreaker). Include the current Games day number, events completed so far, and today's medal event count.
-Return JSON:
-{{"medals": [{{"rank": 1, "country": "Norway", "flag": "\U0001f1f3\U0001f1f4", "code": "NOR", "gold": 0, "silver": 0, "bronze": 0, "total": 0}}], "day": 10, "events_complete": 51, "medal_events_today": 7, "total_events": 116, "countries_with_medals": 26}}""")
+    """Fetch medal table from Wikipedia. No Perplexity fallback."""
+    return scrape_medal_table()
 
 
 def get_today_schedule():
+    """Fetch today's schedule from Perplexity (olympics.com blocks scraping)."""
     today = _today_str()
     return query_perplexity(f"""Today is {today}. Get today's full 2026 Winter Olympics COMPETITION schedule and results. IMPORTANT RULES:
 1. Use ACTUAL competition start times, NOT NBC TV broadcast or re-air times
@@ -359,71 +709,8 @@ Return JSON:
 {{"events": [{{"time_mst": "2:00 AM", "event": "Alpine Skiing - Men's Slalom Run 1", "sport": "Alpine Skiing", "status": "done|live|upcoming", "is_medal": true, "result": "\U0001f947 Winner (COUNTRY) \u2022 \U0001f948 Second \u2022 \U0001f949 Third"}}]}}""")
 
 
-def get_usa_breakdown(expected_total=None):
-    today = _today_str()
-    total_hint = f' The USA medal table currently shows {expected_total} total medals — your sport-by-sport breakdown MUST sum to exactly {expected_total}.' if expected_total else ''
-
-    base_prompt = f"""Today is {today}. Search olympics.com and nbcolympics.com for the current USA (United States) medal breakdown by sport for the 2026 Winter Olympics.{total_hint} IMPORTANT: List EVERY sport where USA has won at least one medal. Be thorough and complete. Verify gold+silver+bronze totals per sport and overall totals add up correctly.
-Return JSON:
-{{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 0, "bronze": 0}}], "total_gold": 5, "total_silver": 8, "total_bronze": 4, "total": 17}}"""
-
-    def validator(data):
-        sports = data.get('sports', [])
-        if not sports:
-            return False, 'No sports returned'
-        computed = sum(s.get('gold', 0) + s.get('silver', 0) + s.get('bronze', 0) for s in sports)
-        claimed = data.get('total', 0)
-        if computed != claimed:
-            return False, f'Sport totals sum to {computed} but claimed total is {claimed}'
-        if expected_total and computed != expected_total:
-            return False, f'Sport totals sum to {computed} but medal table shows {expected_total}'
-        if computed < 10:
-            return False, f'Only {computed} total medals — suspiciously low'
-        return True, ''
-
-    def corrective(data, error):
-        return f"""Your previous answer was incorrect: {error}. Please search olympics.com again for the USA medal breakdown at the 2026 Winter Olympics.{total_hint} Count EVERY medal carefully: Jordan Stolz (speed skating 2 golds), Breezy Johnson (alpine 1 gold), Elizabeth Lemley (freestyle moguls gold + dual moguls bronze), Figure skating team gold, Chock/Bates ice dance silver, Ben Ogden cross-country sprint silver, Chloe Kim snowboard halfpipe silver, Jaelin Kauf moguls silver + dual moguls silver, Alex Hall slopestyle silver, Jessie Diggins cross-country bronze, alpine team event bronze, short track mixed relay medals. Include ALL of these and any others.
-Return JSON:
-{{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 0, "bronze": 0}}], "total_gold": 5, "total_silver": 8, "total_bronze": 4, "total": 17}}"""
-
-    return query_perplexity_validated(base_prompt, validator, corrective)
-
-
-def get_latest_results():
-    today = _today_str()
-    now = datetime.now(MST)
-    d1 = now.strftime('%b %d')
-    d2 = (now - timedelta(days=1)).strftime('%b %d')
-    d3 = (now - timedelta(days=2)).strftime('%b %d')
-    day_num = max(1, (now - GAMES_START).days + 1)
-    return query_perplexity(f"""Today is {today}. Get ALL medal event results from the last 3 days of the 2026 Winter Olympics: {d1} (Day {day_num}), {d2} (Day {day_num-1}), and {d3} (Day {day_num-2}). Include the gold, silver, and bronze medalists with their country code for EVERY medal event completed so far. If today's medal events haven't happened yet, return an empty results array for today. If you don't know a specific medalist, use "TBD" instead of omitting them.
-Return JSON:
-{{"days": [{{"day_num": {day_num}, "date": "{d1}", "results": [{{"event": "Men's Cross-Country 15km", "gold": "Klaebo (NOR)", "silver": "Ogden (USA)", "bronze": "Niskanen (FIN)"}}]}}]}}""", max_tokens=6000)
-
-
-def get_headlines():
-    today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the top 10 most important headlines from the 2026 Winter Olympics as of today. Include real source URLs from major outlets (NBC, CNN, LA Times, Olympics.com, etc). IMPORTANT: For each headline, use the ACTUAL publication date of the article, NOT today's date. Different articles should have different dates.
-Return JSON:
-{{"headlines": [{{"title": "Short headline", "source": "Source Name", "url": "https://...", "date": "Feb 13"}}]}}""")
-
-
-def get_video_highlights():
-    today = _today_str()
-    return query_perplexity(f"""Today is {today}. Find 10 recent YouTube video highlights from the 2026 Winter Olympics. ONLY use youtube.com or youtu.be URLs — no other video sources. Include the sport emoji and a short title. Use the ACTUAL upload date of each video, NOT today's date.
-Return JSON:
-{{"videos": [{{"title": "Short title", "url": "https://www.youtube.com/watch?v=VIDEO_ID", "source": "NBC Olympics", "emoji": "\u26f8\ufe0f", "date": "Feb 14"}}]}}""")
-
-
-def get_country_medal_details():
-    """Get per-event medal breakdown for top countries."""
-    today = _today_str()
-    return query_perplexity(f"""Today is {today}. For the top 10 countries in the 2026 Milano Cortina Winter Olympics medal table, list EVERY medal they have won so far, organized by country. For each medal, include the event name, medal type (gold/silver/bronze), and the athlete name(s).
-Return JSON:
-{{"countries": [{{"country": "Norway", "code": "NOR", "events": [{{"event": "Cross-Country Skiing Men's 4x7.5km Relay", "medal": "gold", "athlete": "Norway Team"}}]}}]}}""", max_tokens=6000)
-
-
 def get_upcoming_events():
+    """Fetch upcoming events from Perplexity (olympics.com blocks scraping)."""
     today = _today_str()
     now = datetime.now(MST)
     tmrw = (now + timedelta(days=1)).strftime('%b %d')
@@ -1155,103 +1442,138 @@ def validate_schedule_times(schedule):
 
 def main():
     if not API_KEY:
-        print('ERROR: PERPLEXITY_API_KEY environment variable not set')
-        sys.exit(1)
+        print('WARNING: PERPLEXITY_API_KEY not set — schedule/upcoming will use fallbacks')
 
     print(f'Starting dashboard update at {datetime.now(MST).strftime("%Y-%m-%d %H:%M MST")}')
+    now = datetime.now(MST)
+    day_num = max(1, (now - GAMES_START).days + 1)
 
-    # Fetch all data sections (with fallbacks)
     sections = {}
 
-    # 1. Medal table first (needed to validate USA breakdown)
+    # ── Step 1: Medal table from Wikipedia ────────────────────────────────
     try:
         sections['medals'] = get_medal_table()
-        print('  \u2713 Got medals')
+        print('  ✓ Medal table from Wikipedia')
     except Exception as e:
-        print(f'  \u2717 medals failed: {e}')
+        print(f'  ✗ Medal table failed: {e}')
         sections['medals'] = FALLBACK_MEDALS
 
     if not sections['medals'].get('medals'):
+        print('  ↳ Using fallback medal data')
         sections['medals'] = FALLBACK_MEDALS
 
-    # Find USA expected total from medal table for cross-validation
-    usa_row = next((m for m in sections['medals'].get('medals', []) if m.get('code') == 'USA'), None)
-    usa_expected = usa_row['total'] if usa_row else FALLBACK_USA['total']
+    # ── Step 2: Medal winners from Wikipedia ──────────────────────────────
+    # Single parse replaces 3 old Perplexity calls: USA, results, country_details
+    medal_winners = []
+    try:
+        medal_winners = scrape_medal_winners()
+    except Exception as e:
+        print(f'  ✗ Medal winners scrape failed: {e}')
+        traceback.print_exc()
 
-    # 2. Remaining fetchers
-    fetchers = {
-        'schedule': (get_today_schedule, {'events': []}),
-        'usa': (lambda: get_usa_breakdown(expected_total=usa_expected), {'sports': [], 'total': '?'}),
-        'results': (get_latest_results, {'days': []}),
-        'headlines': (get_headlines, {'headlines': []}),
-        'videos': (get_video_highlights, {'videos': []}),
-        'upcoming': (get_upcoming_events, {'days': []}),
-        'country_details': (get_country_medal_details, {'countries': []}),
-    }
-
-    # Athletes always use hardcoded authoritative data
-    sections['athletes'] = FALLBACK_ATHLETES
-    print('  \u2713 Using authoritative athlete data')
-
-    for name, (fn, fallback) in fetchers.items():
+    # ── Step 3: Derive USA breakdown from winners data ────────────────────
+    if medal_winners:
         try:
-            sections[name] = fn()
-            print(f'  \u2713 Got {name}')
+            sections['usa'] = derive_usa_breakdown(medal_winners)
+            # Cross-validate against medal table
+            usa_row = next((m for m in sections['medals'].get('medals', []) if m.get('code') == 'USA'), None)
+            if usa_row and sections['usa']['total'] != usa_row['total']:
+                print(f'  ↳ USA breakdown total {sections["usa"]["total"]} != medal table {usa_row["total"]}, using fallback')
+                sections['usa'] = FALLBACK_USA
+            else:
+                print(f'  ✓ USA breakdown: {sections["usa"]["total"]} medals across {len(sections["usa"]["sports"])} sports')
         except Exception as e:
-            print(f'  \u2717 {name} failed: {e}')
-            traceback.print_exc()
-            sections[name] = fallback
-
-    # ── Smart validation & fallbacks ──────────────────────────────────────
-    # These checks catch the many ways Perplexity returns bad/incomplete data.
-
-    # 1. Medal table: use fallback if empty
-    if not sections['medals'].get('medals'):
-        print('  \u21b3 Using fallback medal data')
-        sections['medals'] = FALLBACK_MEDALS
-
-    # 2. USA breakdown: cross-validate against medal table's USA row
-    usa_sports = sections['usa'].get('sports', [])
-    usa_api_total = sum(s.get('gold', 0) + s.get('silver', 0) + s.get('bronze', 0) for s in usa_sports)
-    # Find USA in medal table to get the authoritative total
-    usa_medal_row = next((m for m in sections['medals'].get('medals', []) if m.get('code') == 'USA'), None)
-    usa_table_total = usa_medal_row['total'] if usa_medal_row else FALLBACK_USA['total']
-    if not usa_sports or usa_api_total != usa_table_total:
-        print(f'  \u21b3 Using fallback USA breakdown (API total {usa_api_total} != medal table {usa_table_total})')
+            print(f'  ✗ USA breakdown derivation failed: {e}')
+            sections['usa'] = FALLBACK_USA
+    else:
         sections['usa'] = FALLBACK_USA
+        print('  ↳ Using fallback USA breakdown (no winners data)')
 
-    # 3. Upcoming events: check that days actually contain events, not just headers
-    upcoming_days = sections['upcoming'].get('days', [])
-    total_upcoming_events = sum(len(d.get('events', [])) for d in upcoming_days)
-    if not upcoming_days or total_upcoming_events < 3:
-        print(f'  \u21b3 Using fallback upcoming events (API returned {total_upcoming_events} events across {len(upcoming_days)} days)')
-        sections['upcoming'] = FALLBACK_UPCOMING
+    # ── Step 4: Derive country details from winners data ──────────────────
+    if medal_winners:
+        try:
+            sections['country_details'] = derive_country_details(medal_winners)
+            print(f'  ✓ Country details: {len(sections["country_details"].get("countries", []))} countries')
+        except Exception as e:
+            print(f'  ✗ Country details failed: {e}')
+            sections['country_details'] = {'countries': []}
+    else:
+        sections['country_details'] = {'countries': []}
 
-    # 4. Schedule: validate times are plausible MST (reject late-night events)
+    # ── Step 5: Derive latest results from winners data ───────────────────
+    if medal_winners:
+        try:
+            sections['results'] = derive_latest_results(medal_winners, day_num)
+            total_results = sum(len(d.get('results', [])) for d in sections['results'].get('days', []))
+            print(f'  ✓ Results: {total_results} events across {len(sections["results"].get("days", []))} days')
+        except Exception as e:
+            print(f'  ✗ Results derivation failed: {e}')
+            sections['results'] = {'days': []}
+    else:
+        sections['results'] = {'days': []}
+
+    # ── Step 6: Headlines from Google News RSS ────────────────────────────
+    try:
+        sections['headlines'] = get_headlines_rss()
+    except Exception as e:
+        print(f'  ✗ Headlines RSS failed: {e}')
+        sections['headlines'] = {'headlines': []}
+
+    # ── Step 7: Videos from YouTube Data API ──────────────────────────────
+    try:
+        sections['videos'] = get_video_highlights_youtube()
+    except Exception as e:
+        print(f'  ✗ YouTube API failed: {e}')
+        sections['videos'] = {'videos': []}
+
+    # Deduplicate + fallback if too few
+    sections['videos'] = deduplicate_videos(sections['videos'])
+    if len(sections['videos'].get('videos', [])) < 4:
+        print(f'  ↳ Using fallback videos ({len(sections["videos"].get("videos", []))} unique from API)')
+        sections['videos'] = FALLBACK_VIDEOS
+
+    # ── Step 8: Schedule from Perplexity ──────────────────────────────────
+    try:
+        sections['schedule'] = get_today_schedule()
+        print('  ✓ Schedule from Perplexity')
+    except Exception as e:
+        print(f'  ✗ Schedule failed: {e}')
+        sections['schedule'] = {'events': []}
+
+    # Validate schedule times
     if sections['schedule'].get('events'):
         sections['schedule'] = validate_schedule_times(sections['schedule'])
 
-    # 5. Results: if today's results are empty but schedule has FINAL medal events, extract them
-    now = datetime.now(MST)
-    day_num = max(1, (now - GAMES_START).days + 1)
+    # If results are sparse, try to extract from schedule
     result_days = sections['results'].get('days', [])
     today_results = next((d for d in result_days if d.get('day_num') == day_num), None)
     if (not today_results or not today_results.get('results')) and sections['schedule'].get('events'):
         extracted = extract_results_from_schedule(sections['schedule'], day_num, now.strftime('%b %d'))
         if extracted:
-            print(f'  \u21b3 Extracted {len(extracted["results"])} results from schedule for Day {day_num}')
-            # Replace or insert today's results
+            print(f'  ↳ Extracted {len(extracted["results"])} results from schedule for Day {day_num}')
             if today_results:
                 today_results['results'] = extracted['results']
             else:
                 result_days.insert(0, extracted)
                 sections['results']['days'] = result_days
 
-    # 6. Videos: deduplicate by YouTube ID and fallback if too few unique videos
-    sections['videos'] = deduplicate_videos(sections['videos'])
-    if len(sections['videos'].get('videos', [])) < 4:
-        print(f'  \u21b3 Using fallback videos (only {len(sections["videos"].get("videos", []))} unique videos from API)')
-        sections['videos'] = FALLBACK_VIDEOS
+    # ── Step 9: Upcoming events from Perplexity ──────────────────────────
+    try:
+        sections['upcoming'] = get_upcoming_events()
+        print('  ✓ Upcoming events from Perplexity')
+    except Exception as e:
+        print(f'  ✗ Upcoming events failed: {e}')
+        sections['upcoming'] = {'days': []}
+
+    upcoming_days = sections['upcoming'].get('days', [])
+    total_upcoming = sum(len(d.get('events', [])) for d in upcoming_days)
+    if not upcoming_days or total_upcoming < 3:
+        print(f'  ↳ Using fallback upcoming ({total_upcoming} events from API)')
+        sections['upcoming'] = FALLBACK_UPCOMING
+
+    # ── Step 10: Athletes (hardcoded authoritative data) ──────────────────
+    sections['athletes'] = FALLBACK_ATHLETES
+    print('  ✓ Authoritative athlete data')
 
     # ── Generate and write HTML ───────────────────────────────────────────
     try:
