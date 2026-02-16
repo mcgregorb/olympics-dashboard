@@ -157,7 +157,7 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <h1>Milano Cortina 2026</h1>
 <p class="subtitle">Winter Olympics Dashboard &bull; <span id="day-label">Day 11</span></p>
 <div class="header-meta">
-<span class="timestamp-badge">Data from: <span id="ts">Mon, Feb 16 12:48 PM MST</span> &bull; Auto-refreshes every 30 min</span>
+<span class="timestamp-badge">Data from: <span id="ts">Mon, Feb 16 02:01 PM MST</span> &bull; Auto-refreshes every 30 min</span>
 <button class="refresh-btn" onclick="refreshDashboard()">&#x1F504; Refresh Data</button>
 </div>
 <p style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;"><a href="https://www.olympics.com/en/milano-cortina-2026/medals" target="_blank" style="color:var(--accent);">View live medal table &rarr;</a> &bull; <a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);">Live schedule &rarr;</a></p>
@@ -198,15 +198,7 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <div class="panel">
 <div class="panel-hdr">&#x1F4C5; Day 11 Schedule (MST)</div>
 <div class="evt-list">
-<div class="evt done medal-evt"><span class="evt-time">2:00 AM</span><div class="evt-info"><div class="evt-name">Alpine Skiing - Men's Slalom Run 1</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> 🥇 Loic Meillard (SUI) • 🥈 Fabio Gstrein (AUT) • 🥉 Henrik Kristoffersen (NOR)</div></div></div>
-<div class="evt done"><span class="evt-time">11:00 AM</span><div class="evt-info"><div class="evt-name">Women's Ice Hockey Semifinal - SWE v USA</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> USA 5 - SWE 0</div></div></div>
-<div class="evt live-now"><span class="evt-time">11:00 AM</span><div class="evt-info"><div class="evt-name">Women's Ice Hockey Semifinal - SUI v CAN</div><div class="evt-detail"><span class="badge badge-live">LIVE</span></div></div></div>
-<div class="evt live-now medal-evt"><span class="evt-time">1:00 PM</span><div class="evt-info"><div class="evt-name">Bobsled - Women's Monobob Final</div><div class="evt-detail"><span class="badge badge-live">LIVE</span></div></div></div>
-<div class="evt medal-evt"><span class="evt-time">2:50 PM</span><div class="evt-info"><div class="evt-name">Freestyle Skiing - Women's Big Air Final</div><div class="evt-detail"><span class="badge badge-upcoming">UPCOMING</span></div></div></div>
-<div class="evt medal-evt"><span class="evt-time">3:00 PM</span><div class="evt-info"><div class="evt-name">Figure Skating - Mixed Pairs Final</div><div class="evt-detail"><span class="badge badge-upcoming">UPCOMING</span></div></div></div>
-<div class="evt done medal-evt"><span class="evt-time">4:00 PM</span><div class="evt-info"><div class="evt-name">Short Track Speed Skating - Women's 1000m Final</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> 🥇 Xandra Velzeboer (NED) • 🥈 Courtney Sarault (CAN) • 🥉 Kim Gilli (KOR)</div></div></div>
-<div class="evt medal-evt"><span class="evt-time">5:00 PM</span><div class="evt-info"><div class="evt-name">Ski Jumping - Men's Super Team Final</div><div class="evt-detail"><span class="badge badge-upcoming">UPCOMING</span></div></div></div>
-</div>
+<div class="section-empty">⏳ Schedule data temporarily unavailable. <a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);">View live schedule →</a></div></div>
 </div>
 </div>
 
@@ -223,14 +215,7 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 </div>
 <div class="panel">
 <div class="panel-hdr">&#x1F947; Latest Medal Results</div>
-<div class="day-tabs">
-<button class="day-tab active" onclick="showDay('d11', this)">Day 11 (Feb 16)</button>
-</div>
-<div id="d11" class="day-content active">
-<div class="result-card"><div class="result-event">Alpine Skiing - Men's Slalom Run 1</div><div class="result-medals">🥇 Loic Meillard (SUI) &bull; 🥈 Fabio Gstrein (AUT) &bull; 🥉 Henrik Kristoffersen (NOR)</div></div>
-<div class="result-card"><div class="result-event">Short Track Speed Skating - Women's 1000m Final</div><div class="result-medals">🥇 Xandra Velzeboer (NED) &bull; 🥈 Courtney Sarault (CAN) &bull; 🥉 Kim Gilli (KOR)</div></div>
-</div>
-</div>
+<div class="section-empty">🏅 Results data temporarily unavailable. <a href="https://www.olympics.com/en/milano-cortina-2026/medals" target="_blank" style="color:var(--accent);">View results →</a></div></div>
 </div>
 
 <div class="grid">
@@ -250,20 +235,25 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <div class="panel tall">
 <div class="panel-hdr">&#x1F4C6; Upcoming Events &mdash; Set Reminders</div>
 <div id="upcoming-events">
-<div class="upcoming-day-hdr">📅 Day 12 — Tue, Feb 17 (4 medal events)</div>
-<div class="upcoming-evt"><span class="ue-time">10:45 AM</span><span class="ue-name">Figure Skating - Women's Short Program</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Figure Skating - Women\'s Short Program','2026-02-17T10:45:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-day-hdr">📅 Day 13 — Wed, Feb 18 (6 medal events)</div>
-<div class="upcoming-evt medal"><span class="ue-time">10:00 AM</span><span class="ue-name">Alpine Skiing - Women's Super-G</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Alpine Skiing - Women\'s Super-G','2026-02-18T10:00:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt medal"><span class="ue-time">11:00 AM</span><span class="ue-name">Biathlon - Women's 10km Pursuit</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Biathlon - Women\'s 10km Pursuit','2026-02-18T11:00:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt medal"><span class="ue-time">12:30 PM</span><span class="ue-name">Cross-Country Skiing - Men's 15km Classic</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Cross-Country Skiing - Men\'s 15km Classic','2026-02-18T12:30:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt medal"><span class="ue-time">1:45 PM</span><span class="ue-name">Snowboard - Women's Slopestyle</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Snowboard - Women\'s Slopestyle','2026-02-18T13:45:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt medal"><span class="ue-time">3:00 PM</span><span class="ue-name">Speed Skating - Men's 5000m</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Speed Skating - Men\'s 5000m','2026-02-18T15:00:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-day-hdr">📅 Day 14 — Thu, Feb 19 (5 medal events)</div>
-<div class="upcoming-evt medal"><span class="ue-time">10:00 AM</span><span class="ue-name">Figure Skating - Women's Free Skating</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Figure Skating - Women\'s Free Skating','2026-02-19T10:00:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt medal"><span class="ue-time">11:30 AM</span><span class="ue-name">Freestyle Skiing - Men's Aerials</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Freestyle Skiing - Men\'s Aerials','2026-02-19T11:30:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt"><span class="ue-time">1:00 PM</span><span class="ue-name">Ice Hockey - Men's Semifinal 1</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Ice Hockey - Men\'s Semifinal 1','2026-02-19T13:00:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt"><span class="ue-time">2:30 PM</span><span class="ue-name">Nordic Combined - Individual Large Hill Ski Jumping</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Nordic Combined - Individual Large Hill Ski Jumping','2026-02-19T14:30:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt medal"><span class="ue-time">4:00 PM</span><span class="ue-name">Short Track Speed Skating - Women's 1500m</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Short Track Speed Skating - Women\'s 1500m','2026-02-19T16:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-day-hdr">📅 Day 12 — Tue, Feb 17 (7 medal events)</div>
+<div class="upcoming-evt medal"><span class="ue-time">1:15 AM</span><span class="ue-name">Snowboard - Women's Slopestyle Final</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Snowboard - Women\'s Slopestyle Final','2026-02-17T01:15:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt"><span class="ue-time">2:00 AM</span><span class="ue-name">Figure Skating - Women's Short Program</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Figure Skating - Women\'s Short Program','2026-02-17T02:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">3:30 AM</span><span class="ue-name">Biathlon - Men's 4x7.5km Relay</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Biathlon - Men\'s 4x7.5km Relay','2026-02-17T03:30:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">4:00 AM</span><span class="ue-name">Speed Skating - Women's Team Pursuit Final</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Speed Skating - Women\'s Team Pursuit Final','2026-02-17T04:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">4:30 AM</span><span class="ue-name">Speed Skating - Men's Team Pursuit Final</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Speed Skating - Men\'s Team Pursuit Final','2026-02-17T04:30:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">5:00 AM</span><span class="ue-name">Freestyle Skiing - Men's Big Air Final</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Freestyle Skiing - Men\'s Big Air Final','2026-02-17T05:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">5:30 AM</span><span class="ue-name">Cross-Country - Nordic Combined 10km</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Cross-Country - Nordic Combined 10km','2026-02-17T05:30:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">6:00 AM</span><span class="ue-name">Bobsled - Two-Man Final</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Bobsled - Two-Man Final','2026-02-17T06:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt"><span class="ue-time">7:00 AM</span><span class="ue-name">Ice Hockey - Women's Semifinal</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Ice Hockey - Women\'s Semifinal','2026-02-17T07:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-day-hdr">📅 Day 13 — Wed, Feb 18 (8 medal events)</div>
+<div class="upcoming-evt"><span class="ue-time">1:00 AM</span><span class="ue-name">Alpine Skiing - Men's Slalom Run 1</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Alpine Skiing - Men\'s Slalom Run 1','2026-02-18T01:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">2:00 AM</span><span class="ue-name">Freestyle Skiing - Women's Aerials Final</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Freestyle Skiing - Women\'s Aerials Final','2026-02-18T02:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">3:00 AM</span><span class="ue-name">Short Track - Men's 500m Final</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Short Track - Men\'s 500m Final','2026-02-18T03:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">4:00 AM</span><span class="ue-name">Alpine Skiing - Men's Slalom Run 2</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Alpine Skiing - Men\'s Slalom Run 2','2026-02-18T04:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">4:30 AM</span><span class="ue-name">Biathlon - Women's 12.5km Mass Start</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Biathlon - Women\'s 12.5km Mass Start','2026-02-18T04:30:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">5:00 AM</span><span class="ue-name">Snowboard - Men's Big Air Final</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Snowboard - Men\'s Big Air Final','2026-02-18T05:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">6:00 AM</span><span class="ue-name">Cross-Country Skiing - Women's 10km</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Cross-Country Skiing - Women\'s 10km','2026-02-18T06:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt"><span class="ue-time">8:00 AM</span><span class="ue-name">Ice Hockey - Men's Quarterfinal</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Ice Hockey - Men\'s Quarterfinal','2026-02-18T08:00:00-07:00')">🔔 Remind</button></div>
 </div>
 </div>
 </div>
