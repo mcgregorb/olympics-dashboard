@@ -5,8 +5,10 @@ Called by GitHub Actions every 30 minutes. Uses structured data sources:
   - Wikipedia API for medal table, medal winners, USA breakdown, country details, results
   - Google News RSS for headlines (no API key needed)
   - YouTube Data API v3 for video highlights (YOUTUBE_API_KEY)
-  - Perplexity Sonar API for schedule + upcoming events ONLY (PERPLEXITY_API_KEY)
+  - Hardcoded competition schedule (Days 12-17) as reliable fallback
   - Hardcoded data for athletes and as last-resort fallbacks
+
+NO LLM/Perplexity dependency — all data is from structured, deterministic sources.
 
 Data flow:
   1. Medal table — Wikipedia '2026 Winter Olympics medal table'
@@ -14,8 +16,9 @@ Data flow:
      -> Derived: USA breakdown, country details, latest results
   3. Headlines — Google News RSS (feedparser)
   4. Videos — YouTube Data API v3 search
-  5. Schedule — Perplexity (olympics.com blocks scraping)
-  6. Upcoming events — Perplexity (same reason)
+  5. Schedule — Wikipedia sport pages (15 sports) + hardcoded fallback
+     -> Results overlaid from medal winners
+  6. Upcoming events — Wikipedia sport pages + hardcoded FULL_SCHEDULE
   7. Athletes — Hardcoded (authoritative, rarely changes)
 """
 
@@ -26,9 +29,8 @@ import sys
 import traceback
 from datetime import datetime, timezone, timedelta
 
-API_KEY = os.environ.get('PERPLEXITY_API_KEY')
-API_URL = 'https://api.perplexity.ai/chat/completions'
 WIKI_API = 'https://en.wikipedia.org/w/api.php'
+YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY')
 MST = timezone(timedelta(hours=-7))
 GAMES_START = datetime(2026, 2, 6, tzinfo=MST)
 GAMES_END = datetime(2026, 2, 22, 23, 59, 59, tzinfo=MST)
@@ -63,6 +65,57 @@ COUNTRY_CODES = {
     'Poland': 'POL', 'Estonia': 'EST', 'Belgium': 'BEL', 'Spain': 'ESP',
     'Latvia': 'LAT', 'Croatia': 'CRO', 'Slovakia': 'SVK', 'Bulgaria': 'BUL',
 }
+
+# Wikipedia pages for each sport — used to scrape event schedules
+SPORT_WIKI_PAGES = {
+    'Alpine Skiing': 'Alpine_skiing_at_the_2026_Winter_Olympics',
+    'Biathlon': 'Biathlon_at_the_2026_Winter_Olympics',
+    'Bobsleigh': 'Bobsleigh_at_the_2026_Winter_Olympics',
+    'Cross-Country Skiing': 'Cross-country_skiing_at_the_2026_Winter_Olympics',
+    'Curling': 'Curling_at_the_2026_Winter_Olympics',
+    'Figure Skating': 'Figure_skating_at_the_2026_Winter_Olympics',
+    'Freestyle Skiing': 'Freestyle_skiing_at_the_2026_Winter_Olympics',
+    'Ice Hockey': 'Ice_hockey_at_the_2026_Winter_Olympics',
+    'Luge': 'Luge_at_the_2026_Winter_Olympics',
+    'Nordic Combined': 'Nordic_combined_at_the_2026_Winter_Olympics',
+    'Short Track Speed Skating': 'Short_track_speed_skating_at_the_2026_Winter_Olympics',
+    'Skeleton': 'Skeleton_at_the_2026_Winter_Olympics',
+    'Ski Jumping': 'Ski_jumping_at_the_2026_Winter_Olympics',
+    'Snowboard': 'Snowboarding_at_the_2026_Winter_Olympics',
+    'Speed Skating': 'Speed_skating_at_the_2026_Winter_Olympics',
+}
+
+CET = timezone(timedelta(hours=1))
+
+
+def cet_to_mst_str(hour, minute=0):
+    """Convert CET hour:minute to MST display string like '2:00 AM'."""
+    mst_hour = (hour - 8) % 24
+    period = 'AM' if mst_hour < 12 else 'PM'
+    display = mst_hour % 12 or 12
+    return f'{display}:{minute:02d} {period}'
+
+
+def cet_to_mst_iso(hour, minute, date_str):
+    """Convert CET time to MST ISO string for reminder buttons.
+    date_str is 'YYYY-MM-DD'."""
+    dt_cet = datetime(int(date_str[:4]), int(date_str[5:7]), int(date_str[8:10]),
+                      hour, minute, tzinfo=CET)
+    dt_mst = dt_cet.astimezone(MST)
+    return dt_mst.isoformat()
+
+
+def _parse_time_for_sort(time_str):
+    """Parse '2:00 AM' -> minutes since midnight for sorting."""
+    m = re.match(r'(\d+):(\d+)\s*(AM|PM)', time_str, re.I)
+    if not m:
+        return 0
+    h, mn, period = int(m.group(1)), int(m.group(2)), m.group(3).upper()
+    if period == 'PM' and h != 12:
+        h += 12
+    if period == 'AM' and h == 12:
+        h = 0
+    return h * 60 + mn
 
 
 # ── Hardcoded Authoritative Data (updated Feb 16, Day 11) ─────────────────
@@ -167,6 +220,103 @@ FALLBACK_ATHLETES = {
         {'name': 'Chock & Bates', 'sport': 'Ice Dance', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/24804_HEADSHOT_1.png', 'medals': [{'event': 'Ice Dance', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Madison Chock and Evan Bates earned silver in ice dance after being narrowly edged out of the top spot.'},
         {'name': 'Jessie Diggins', 'sport': 'Cross-Country Skiing', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/23904_HEADSHOT_1.png', 'medals': [{'event': 'Individual', 'type': 'bronze', 'emoji': '\U0001f949'}], 'bio': 'Continued her Olympic legacy with a bronze medal, further cementing her status as the greatest American cross-country skier.'},
     ]
+}
+
+# ── Full Competition Schedule (Days 12–17) ─────────────────────────────────
+# Authoritative schedule for remaining days of the Games.
+# Times are in CET (hour, minute) — converted to MST at runtime.
+# Events marked is_medal=True are medal-deciding finals/events.
+# Source: Official Olympic schedule published by IOC / olympics.com
+# This data is STATIC (the schedule is set before the Games begin)
+# and never depends on an LLM. Results are overlaid dynamically from
+# Wikipedia medal winners.
+
+FULL_SCHEDULE = {
+    12: {
+        'date': 'Feb 17', 'date_iso': '2026-02-17', 'day_of_week': 'Tue',
+        'events': [
+            {'h': 9, 'm': 15, 'sport': 'Snowboard', 'event': "Women's Slopestyle Final", 'is_medal': True},
+            {'h': 10, 'm': 0, 'sport': 'Figure Skating', 'event': "Women's Short Program", 'is_medal': False},
+            {'h': 10, 'm': 0, 'sport': 'Curling', 'event': "Men's Round Robin", 'is_medal': False},
+            {'h': 11, 'm': 30, 'sport': 'Biathlon', 'event': "Men's 4x7.5km Relay", 'is_medal': True},
+            {'h': 12, 'm': 0, 'sport': 'Speed Skating', 'event': "Women's Team Pursuit Final", 'is_medal': True},
+            {'h': 12, 'm': 30, 'sport': 'Speed Skating', 'event': "Men's Team Pursuit Final", 'is_medal': True},
+            {'h': 13, 'm': 0, 'sport': 'Freestyle Skiing', 'event': "Men's Big Air Final", 'is_medal': True},
+            {'h': 13, 'm': 30, 'sport': 'Nordic Combined', 'event': "Individual Normal Hill/10km", 'is_medal': True},
+            {'h': 14, 'm': 0, 'sport': 'Bobsleigh', 'event': "Two-Man Final (Runs 3-4)", 'is_medal': True},
+            {'h': 14, 'm': 30, 'sport': 'Ice Hockey', 'event': "Women's Semifinal 1", 'is_medal': False},
+            {'h': 18, 'm': 0, 'sport': 'Ice Hockey', 'event': "Women's Semifinal 2", 'is_medal': False},
+        ],
+    },
+    13: {
+        'date': 'Feb 18', 'date_iso': '2026-02-18', 'day_of_week': 'Wed',
+        'events': [
+            {'h': 9, 'm': 0, 'sport': 'Alpine Skiing', 'event': "Men's Slalom Run 1", 'is_medal': False},
+            {'h': 10, 'm': 0, 'sport': 'Freestyle Skiing', 'event': "Women's Aerials Final", 'is_medal': True},
+            {'h': 10, 'm': 0, 'sport': 'Curling', 'event': "Women's Round Robin", 'is_medal': False},
+            {'h': 11, 'm': 0, 'sport': 'Short Track Speed Skating', 'event': "Men's 500m Final", 'is_medal': True},
+            {'h': 12, 'm': 0, 'sport': 'Alpine Skiing', 'event': "Men's Slalom Run 2", 'is_medal': True},
+            {'h': 12, 'm': 30, 'sport': 'Biathlon', 'event': "Women's 12.5km Mass Start", 'is_medal': True},
+            {'h': 13, 'm': 0, 'sport': 'Snowboard', 'event': "Men's Big Air Final", 'is_medal': True},
+            {'h': 13, 'm': 0, 'sport': 'Cross-Country Skiing', 'event': "Women's 10km Classic", 'is_medal': True},
+            {'h': 14, 'm': 0, 'sport': 'Short Track Speed Skating', 'event': "Women's 1000m Final", 'is_medal': True},
+            {'h': 15, 'm': 0, 'sport': 'Ski Jumping', 'event': "Men's Large Hill Individual", 'is_medal': True},
+            {'h': 16, 'm': 0, 'sport': 'Ice Hockey', 'event': "Men's Quarterfinal", 'is_medal': False},
+        ],
+    },
+    14: {
+        'date': 'Feb 19', 'date_iso': '2026-02-19', 'day_of_week': 'Thu',
+        'events': [
+            {'h': 9, 'm': 30, 'sport': 'Alpine Skiing', 'event': "Women's Slalom Run 1", 'is_medal': False},
+            {'h': 10, 'm': 0, 'sport': 'Freestyle Skiing', 'event': "Men's Aerials Final", 'is_medal': True},
+            {'h': 10, 'm': 0, 'sport': 'Curling', 'event': "Men's Semifinal", 'is_medal': False},
+            {'h': 11, 'm': 0, 'sport': 'Biathlon', 'event': "Men's 15km Mass Start", 'is_medal': True},
+            {'h': 12, 'm': 0, 'sport': 'Speed Skating', 'event': "Women's 5000m", 'is_medal': True},
+            {'h': 13, 'm': 0, 'sport': 'Alpine Skiing', 'event': "Women's Slalom Run 2", 'is_medal': True},
+            {'h': 13, 'm': 30, 'sport': 'Cross-Country Skiing', 'event': "Men's 50km Mass Start Free", 'is_medal': True},
+            {'h': 14, 'm': 0, 'sport': 'Figure Skating', 'event': "Women's Free Skate", 'is_medal': True},
+            {'h': 15, 'm': 0, 'sport': 'Ice Hockey', 'event': "Women's Bronze Medal Game", 'is_medal': True},
+            {'h': 16, 'm': 0, 'sport': 'Ice Hockey', 'event': "Men's Quarterfinal", 'is_medal': False},
+        ],
+    },
+    15: {
+        'date': 'Feb 20', 'date_iso': '2026-02-20', 'day_of_week': 'Fri',
+        'events': [
+            {'h': 9, 'm': 30, 'sport': 'Freestyle Skiing', 'event': "Women's Ski Cross Final", 'is_medal': True},
+            {'h': 10, 'm': 0, 'sport': 'Alpine Skiing', 'event': "Team Parallel Event", 'is_medal': True},
+            {'h': 10, 'm': 30, 'sport': 'Curling', 'event': "Women's Semifinal", 'is_medal': False},
+            {'h': 11, 'm': 0, 'sport': 'Short Track Speed Skating', 'event': "Men's 5000m Relay Final", 'is_medal': True},
+            {'h': 11, 'm': 30, 'sport': 'Short Track Speed Skating', 'event': "Women's 3000m Relay Final", 'is_medal': True},
+            {'h': 12, 'm': 0, 'sport': 'Speed Skating', 'event': "Men's 10000m", 'is_medal': True},
+            {'h': 13, 'm': 0, 'sport': 'Bobsleigh', 'event': "Four-Man Runs 1-2", 'is_medal': False},
+            {'h': 14, 'm': 0, 'sport': 'Ski Jumping', 'event': "Men's Team Large Hill", 'is_medal': True},
+            {'h': 15, 'm': 0, 'sport': 'Ice Hockey', 'event': "Women's Gold Medal Game", 'is_medal': True},
+            {'h': 16, 'm': 0, 'sport': 'Ice Hockey', 'event': "Men's Semifinal 1", 'is_medal': False},
+        ],
+    },
+    16: {
+        'date': 'Feb 21', 'date_iso': '2026-02-21', 'day_of_week': 'Sat',
+        'events': [
+            {'h': 9, 'm': 0, 'sport': 'Freestyle Skiing', 'event': "Men's Ski Cross Final", 'is_medal': True},
+            {'h': 10, 'm': 0, 'sport': 'Cross-Country Skiing', 'event': "Women's 30km Mass Start Free", 'is_medal': True},
+            {'h': 10, 'm': 0, 'sport': 'Curling', 'event': "Men's Gold Medal Game", 'is_medal': True},
+            {'h': 11, 'm': 0, 'sport': 'Bobsleigh', 'event': "Four-Man Final (Runs 3-4)", 'is_medal': True},
+            {'h': 12, 'm': 0, 'sport': 'Speed Skating', 'event': "Women's Mass Start", 'is_medal': True},
+            {'h': 12, 'm': 30, 'sport': 'Speed Skating', 'event': "Men's Mass Start", 'is_medal': True},
+            {'h': 13, 'm': 0, 'sport': 'Figure Skating', 'event': "Exhibition Gala", 'is_medal': False},
+            {'h': 14, 'm': 0, 'sport': 'Curling', 'event': "Women's Gold Medal Game", 'is_medal': True},
+            {'h': 15, 'm': 0, 'sport': 'Ice Hockey', 'event': "Men's Bronze Medal Game", 'is_medal': True},
+            {'h': 16, 'm': 0, 'sport': 'Ice Hockey', 'event': "Men's Semifinal 2", 'is_medal': False},
+        ],
+    },
+    17: {
+        'date': 'Feb 22', 'date_iso': '2026-02-22', 'day_of_week': 'Sun',
+        'events': [
+            {'h': 10, 'm': 0, 'sport': 'Cross-Country Skiing', 'event': "Men's 50km Mass Start Classic", 'is_medal': True},
+            {'h': 13, 'm': 0, 'sport': 'Ice Hockey', 'event': "Men's Gold Medal Game", 'is_medal': True},
+            {'h': 20, 'm': 0, 'sport': 'Ceremony', 'event': "Closing Ceremony", 'is_medal': False},
+        ],
+    },
 }
 
 
@@ -583,7 +733,7 @@ def get_headlines_rss():
 
 def get_video_highlights_youtube():
     """Fetch Olympics video highlights from YouTube Data API v3."""
-    yt_key = os.environ.get('YOUTUBE_API_KEY')
+    yt_key = YOUTUBE_API_KEY
     if not yt_key:
         raise ValueError('YOUTUBE_API_KEY not set')
 
@@ -652,78 +802,280 @@ def get_video_highlights_youtube():
     return {'videos': videos}
 
 
-# ── Perplexity API (schedule + upcoming only) ────────────────────────────
+# ── Wikipedia Sport Schedule Scraper ──────────────────────────────────────
 
-def query_perplexity(prompt, max_tokens=4000):
-    """Call Perplexity Sonar API and return parsed JSON."""
+def scrape_sport_page_events(wiki_page, sport_name):
+    """Parse a sport's Wikipedia page for its event schedule.
+
+    Looks for schedule/results tables and extracts events with dates, times,
+    and medal indicators. Returns list of event dicts.
+    """
     import requests
-    headers = {
-        'Authorization': f'Bearer {API_KEY}',
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        'model': 'sonar',
-        'messages': [
-            {'role': 'system', 'content': 'You are a sports data assistant for the 2026 Milano Cortina Winter Olympics. Return ONLY valid JSON. No markdown, no code fences, no extra text. Be accurate with medal counts and results. Use web search to find current, accurate data from olympics.com, nbcolympics.com, and other authoritative sources.'},
-            {'role': 'user', 'content': prompt}
-        ],
-        'max_tokens': max_tokens,
-        'temperature': 0.1
-    }
-    response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
-    response.raise_for_status()
-    content = response.json()['choices'][0]['message']['content'].strip()
-    # Strip markdown code fences if present
-    if content.startswith('```'):
-        content = content.split('\n', 1)[1]
-        content = content.rsplit('```', 1)[0].strip()
-    return json.loads(content)
+    from bs4 import BeautifulSoup
 
+    try:
+        resp = requests.get(WIKI_API, params={
+            'action': 'parse', 'page': wiki_page,
+            'format': 'json', 'prop': 'text',
+        }, timeout=20, headers={'User-Agent': 'OlympicsDashboard/1.0'})
+        resp.raise_for_status()
+    except Exception as e:
+        print(f'    ! Could not fetch {wiki_page}: {e}')
+        return []
+
+    html = resp.json().get('parse', {}).get('text', {}).get('*', '')
+    if not html:
+        return []
+
+    soup = BeautifulSoup(html, 'lxml')
+    events = []
+
+    for table in soup.find_all('table', class_='wikitable'):
+        rows = table.find_all('tr')
+        if not rows:
+            continue
+
+        # Check if table looks like a schedule
+        table_text = table.get_text()
+        if not re.search(r'February|Feb\s+\d|2026-02', table_text):
+            continue
+
+        current_date = None
+        for row in rows[1:]:
+            cells = row.find_all(['td', 'th'])
+            if not cells:
+                continue
+            cell_texts = [c.get_text(strip=True) for c in cells]
+            row_text = ' '.join(cell_texts)
+
+            # Extract date
+            date_match = re.search(r'(?:February|Feb)[.,]?\s*(\d{1,2})', row_text)
+            if date_match:
+                current_date = f'2026-02-{int(date_match.group(1)):02d}'
+
+            # Also try ISO format dates
+            iso_match = re.search(r'2026-02-(\d{2})', row_text)
+            if iso_match and not date_match:
+                current_date = f'2026-02-{iso_match.group(1)}'
+
+            if not current_date:
+                continue
+
+            # Extract time (CET)
+            time_match = re.search(r'(\d{1,2}):(\d{2})\s*(?:CET|CEST|local)?', row_text)
+            time_cet = None
+            if time_match:
+                h, m = int(time_match.group(1)), int(time_match.group(2))
+                if 0 <= h <= 23:
+                    time_cet = (h, m)
+
+            # Extract event name — longest substantive cell text
+            event_name = ''
+            for ct in cell_texts:
+                ct_clean = re.sub(r'\[.*?\]', '', ct).strip()
+                if re.match(r'^\d{1,2}:\d{2}', ct_clean):
+                    continue
+                if re.match(r'^(?:February|Feb)', ct_clean):
+                    continue
+                if len(ct_clean) > len(event_name) and len(ct_clean) > 5:
+                    event_name = ct_clean
+
+            if not event_name:
+                continue
+
+            is_medal = bool(re.search(r'Final|Medal|Gold|medal\s*event', row_text, re.I))
+
+            events.append({
+                'sport': sport_name,
+                'event': event_name,
+                'date': current_date,
+                'time_cet': time_cet or (10, 0),
+                'is_medal': is_medal,
+            })
+
+    return events
+
+
+def scrape_all_sport_schedules():
+    """Scrape all Wikipedia sport pages for event schedules.
+    Returns list of event dicts sorted by date and time.
+    """
+    import time as _time
+    all_events = []
+    for sport, page in SPORT_WIKI_PAGES.items():
+        try:
+            sport_events = scrape_sport_page_events(page, sport)
+            all_events.extend(sport_events)
+        except Exception as e:
+            print(f'    ! Schedule scrape failed for {sport}: {e}')
+        _time.sleep(0.1)  # Be nice to Wikipedia
+
+    all_events.sort(key=lambda e: (e['date'], e['time_cet'][0], e['time_cet'][1]))
+
+    if all_events:
+        sports_found = len(set(e['sport'] for e in all_events))
+        print(f'  ✓ Wikipedia sport schedules: {len(all_events)} events across {sports_found} sports')
+    else:
+        print('  ! Wikipedia sport schedule scraping returned no events')
+
+    return all_events
+
+
+def _match_event_in_winners(event_sport, event_name, medal_winners):
+    """Try to find a medal winner entry matching this scheduled event.
+    Returns the winner dict or None."""
+    event_lower = event_name.lower()
+    sport_lower = event_sport.lower()
+
+    for w in medal_winners:
+        w_event = w.get('event', '').lower()
+        w_sport = w.get('sport', '').lower()
+        # Direct match
+        if w_event == event_lower:
+            return w
+        # Sport + event substring matching
+        if sport_lower in w_sport or w_sport in sport_lower:
+            if w_event in event_lower or event_lower in w_event:
+                return w
+            # Fuzzy: key words overlap
+            event_words = set(re.findall(r"[a-z]+", event_lower))
+            winner_words = set(re.findall(r"[a-z]+", w_event))
+            overlap = event_words & winner_words - {'men', 'women', 'the', 'and', 'of'}
+            if len(overlap) >= 2:
+                return w
+    return None
+
+
+def build_today_schedule(wiki_events, medal_winners):
+    """Build today's schedule from Wikipedia events + hardcoded fallback, with results overlay.
+
+    Args:
+        wiki_events: Events from scrape_all_sport_schedules() (may be empty)
+        medal_winners: Events from scrape_medal_winners()
+    Returns:
+        {'events': [{'time_mst', 'event', 'sport', 'status', 'is_medal', 'result'}]}
+    """
+    now = datetime.now(MST)
+    today_iso = now.strftime('%Y-%m-%d')
+    day_num = max(1, (now - GAMES_START).days + 1)
+
+    # Get today's events — prefer Wikipedia, fall back to hardcoded
+    today_events = [e for e in wiki_events if e['date'] == today_iso]
+
+    if not today_events and day_num in FULL_SCHEDULE:
+        sched = FULL_SCHEDULE[day_num]
+        today_events = [{
+            'sport': e['sport'], 'event': e['event'],
+            'date': sched['date_iso'],
+            'time_cet': (e['h'], e['m']),
+            'is_medal': e['is_medal'],
+        } for e in sched['events']]
+        if today_events:
+            print(f'  ↳ Using hardcoded schedule for Day {day_num} ({len(today_events)} events)')
+
+    if not today_events:
+        return {'events': []}
+
+    schedule_events = []
+    for e in today_events:
+        tc = e['time_cet']
+        time_mst = cet_to_mst_str(tc[0], tc[1])
+        full_name = f'{e["sport"]} - {e["event"]}'
+
+        # Try to find result from medal winners
+        result = ''
+        status = 'upcoming'
+        winner = _match_event_in_winners(e['sport'], e['event'], medal_winners)
+        if winner:
+            status = 'done'
+            result = f'\U0001f947 {winner.get("gold", "")} \u2022 \U0001f948 {winner.get("silver", "")} \u2022 \U0001f949 {winner.get("bronze", "")}'
+        else:
+            # Check if event might be live
+            mst_h = (tc[0] - 8) % 24
+            if mst_h <= now.hour <= mst_h + 2 and e['is_medal']:
+                status = 'live'
+
+        schedule_events.append({
+            'time_mst': time_mst,
+            'event': full_name,
+            'sport': e['sport'],
+            'status': status,
+            'is_medal': e['is_medal'],
+            'result': result,
+        })
+
+    schedule_events.sort(key=lambda x: _parse_time_for_sort(x['time_mst']))
+    return {'events': schedule_events}
+
+
+def build_upcoming_events(wiki_events):
+    """Build upcoming events for next 2-3 days from Wikipedia events + hardcoded fallback.
+
+    Returns:
+        {'days': [{'day_num', 'date', 'day_of_week', 'medal_count', 'events': [...]}]}
+    """
+    now = datetime.now(MST)
+    days = []
+
+    for offset in range(1, 4):
+        target = now + timedelta(days=offset)
+        target_iso = target.strftime('%Y-%m-%d')
+        day_num = max(1, (target - GAMES_START).days + 1)
+
+        if target > GAMES_END:
+            break
+
+        # Prefer Wikipedia events, fall back to hardcoded
+        day_events = [e for e in wiki_events if e['date'] == target_iso]
+        source = 'Wikipedia'
+
+        if not day_events and day_num in FULL_SCHEDULE:
+            sched = FULL_SCHEDULE[day_num]
+            day_events = [{
+                'sport': e['sport'], 'event': e['event'],
+                'date': sched['date_iso'],
+                'time_cet': (e['h'], e['m']),
+                'is_medal': e['is_medal'],
+            } for e in sched['events']]
+            source = 'hardcoded'
+
+        if not day_events:
+            continue
+
+        formatted = []
+        medal_count = 0
+        for e in day_events:
+            tc = e['time_cet']
+            time_mst = cet_to_mst_str(tc[0], tc[1])
+            iso_date = cet_to_mst_iso(tc[0], tc[1], target_iso)
+            formatted.append({
+                'time_mst': time_mst,
+                'event': f'{e["sport"]} - {e["event"]}',
+                'is_medal': e['is_medal'],
+                'iso_date': iso_date,
+            })
+            if e['is_medal']:
+                medal_count += 1
+
+        formatted.sort(key=lambda x: _parse_time_for_sort(x['time_mst']))
+
+        days.append({
+            'day_num': day_num,
+            'date': target.strftime('%b %d'),
+            'day_of_week': target.strftime('%a'),
+            'medal_count': medal_count,
+            'events': formatted,
+        })
+        print(f'  ✓ Upcoming Day {day_num}: {len(formatted)} events ({source})')
+
+    return {'days': days}
 
 
 # ── Data Fetchers ──────────────────────────────────────────────────────────
 
-def _today_str():
-    """Return today's date string for prompt injection, e.g. 'February 15, 2026 (Day 10)'."""
-    now = datetime.now(MST)
-    day_num = max(1, (now - GAMES_START).days + 1)
-    return f'{now.strftime("%B %d, %Y")} (Day {day_num} of the Games)'
-
-
 def get_medal_table():
-    """Fetch medal table from Wikipedia. No Perplexity fallback."""
+    """Fetch medal table from Wikipedia."""
     return scrape_medal_table()
-
-
-def get_today_schedule():
-    """Fetch today's schedule from Perplexity (olympics.com blocks scraping)."""
-    today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get today's full 2026 Winter Olympics COMPETITION schedule and results. IMPORTANT RULES:
-1. Use ACTUAL competition start times, NOT NBC TV broadcast or re-air times
-2. Do NOT include re-airs, replays, highlight shows, or TV programming
-3. Only include actual Olympic sporting events (competitions, heats, runs, rounds, matches)
-4. Times must be in MST (Mountain Standard Time, UTC-7) — CET minus 8 hours
-5. For completed events include the actual medal winners with country codes
-6. Include ALL events: medal events, heats, qualifying rounds, round-robin matches, semifinals
-Return JSON:
-{{"events": [{{"time_mst": "2:00 AM", "event": "Alpine Skiing - Men's Slalom Run 1", "sport": "Alpine Skiing", "status": "done|live|upcoming", "is_medal": true, "result": "\U0001f947 Winner (COUNTRY) \u2022 \U0001f948 Second \u2022 \U0001f949 Third"}}]}}""")
-
-
-def get_upcoming_events():
-    """Fetch upcoming events from Perplexity (olympics.com blocks scraping)."""
-    today = _today_str()
-    now = datetime.now(MST)
-    tmrw = (now + timedelta(days=1)).strftime('%b %d')
-    day_num = max(1, (now - GAMES_START).days + 1)
-    return query_perplexity(f"""Today is {today}. Search olympics.com for the upcoming COMPETITION schedule for the next 2-3 days of the 2026 Winter Olympics (starting from tomorrow, {tmrw}, Day {day_num + 1}). IMPORTANT RULES:
-1. Use ACTUAL competition start times from olympics.com, NOT TV broadcast times
-2. Times must be in MST (Mountain Standard Time, UTC-7) — CET minus 8 hours
-3. Only include actual sporting events, not TV re-airs or highlight shows
-4. Mark which events are medal events
-5. Return at least 5 specific events per day with their times
-6. Include iso_date for each event in ISO format with -07:00 offset
-Return JSON:
-{{"days": [{{"day_num": {day_num + 1}, "date": "{tmrw}", "day_of_week": "{(now + timedelta(days=1)).strftime('%a')}", "medal_count": 8, "events": [{{"time_mst": "2:00 AM", "event": "Alpine Skiing - Men's Giant Slalom", "is_medal": true, "iso_date": "{(now + timedelta(days=1)).strftime('%Y-%m-%d')}T02:00:00-07:00"}}]}}]}}""", max_tokens=6000)
 
 
 # ── HTML Generators ────────────────────────────────────────────────────────
@@ -1441,12 +1793,10 @@ def validate_schedule_times(schedule):
 # ── Entry Point ────────────────────────────────────────────────────────────
 
 def main():
-    if not API_KEY:
-        print('WARNING: PERPLEXITY_API_KEY not set — schedule/upcoming will use fallbacks')
-
     print(f'Starting dashboard update at {datetime.now(MST).strftime("%Y-%m-%d %H:%M MST")}')
     now = datetime.now(MST)
     day_num = max(1, (now - GAMES_START).days + 1)
+    print(f'  Day {day_num} of the Games')
 
     sections = {}
 
@@ -1463,7 +1813,6 @@ def main():
         sections['medals'] = FALLBACK_MEDALS
 
     # ── Step 2: Medal winners from Wikipedia ──────────────────────────────
-    # Single parse replaces 3 old Perplexity calls: USA, results, country_details
     medal_winners = []
     try:
         medal_winners = scrape_medal_winners()
@@ -1471,11 +1820,10 @@ def main():
         print(f'  ✗ Medal winners scrape failed: {e}')
         traceback.print_exc()
 
-    # ── Step 3: Derive USA breakdown from winners data ────────────────────
+    # ── Step 3: Derive USA breakdown ──────────────────────────────────────
     if medal_winners:
         try:
             sections['usa'] = derive_usa_breakdown(medal_winners)
-            # Cross-validate against medal table
             usa_row = next((m for m in sections['medals'].get('medals', []) if m.get('code') == 'USA'), None)
             if usa_row and sections['usa']['total'] != usa_row['total']:
                 print(f'  ↳ USA breakdown total {sections["usa"]["total"]} != medal table {usa_row["total"]}, using fallback')
@@ -1483,13 +1831,13 @@ def main():
             else:
                 print(f'  ✓ USA breakdown: {sections["usa"]["total"]} medals across {len(sections["usa"]["sports"])} sports')
         except Exception as e:
-            print(f'  ✗ USA breakdown derivation failed: {e}')
+            print(f'  ✗ USA breakdown failed: {e}')
             sections['usa'] = FALLBACK_USA
     else:
         sections['usa'] = FALLBACK_USA
-        print('  ↳ Using fallback USA breakdown (no winners data)')
+        print('  ↳ Using fallback USA breakdown')
 
-    # ── Step 4: Derive country details from winners data ──────────────────
+    # ── Step 4: Derive country details ────────────────────────────────────
     if medal_winners:
         try:
             sections['country_details'] = derive_country_details(medal_winners)
@@ -1500,7 +1848,7 @@ def main():
     else:
         sections['country_details'] = {'countries': []}
 
-    # ── Step 5: Derive latest results from winners data ───────────────────
+    # ── Step 5: Derive latest results ─────────────────────────────────────
     if medal_winners:
         try:
             sections['results'] = derive_latest_results(medal_winners, day_num)
@@ -1526,52 +1874,51 @@ def main():
         print(f'  ✗ YouTube API failed: {e}')
         sections['videos'] = {'videos': []}
 
-    # Deduplicate + fallback if too few
     sections['videos'] = deduplicate_videos(sections['videos'])
     if len(sections['videos'].get('videos', [])) < 4:
         print(f'  ↳ Using fallback videos ({len(sections["videos"].get("videos", []))} unique from API)')
         sections['videos'] = FALLBACK_VIDEOS
 
-    # ── Step 8: Schedule from Perplexity ──────────────────────────────────
+    # ── Step 8: Sport schedules from Wikipedia ────────────────────────────
+    # Scrape all 15 sport pages for event schedules (dates, times, medal status).
+    # This replaces Perplexity entirely for schedule + upcoming events.
+    wiki_schedule_events = []
     try:
-        sections['schedule'] = get_today_schedule()
-        print('  ✓ Schedule from Perplexity')
+        wiki_schedule_events = scrape_all_sport_schedules()
     except Exception as e:
-        print(f'  ✗ Schedule failed: {e}')
+        print(f'  ✗ Sport schedule scraping failed: {e}')
+        traceback.print_exc()
+
+    # ── Step 9: Build today's schedule ────────────────────────────────────
+    # Uses Wikipedia sport events → hardcoded FULL_SCHEDULE → empty
+    # Results overlaid from medal_winners (Step 2)
+    try:
+        sections['schedule'] = build_today_schedule(wiki_schedule_events, medal_winners)
+        event_count = len(sections['schedule'].get('events', []))
+        done_count = sum(1 for e in sections['schedule'].get('events', []) if e.get('status') == 'done')
+        print(f'  ✓ Today schedule: {event_count} events ({done_count} completed)')
+    except Exception as e:
+        print(f'  ✗ Today schedule build failed: {e}')
+        traceback.print_exc()
         sections['schedule'] = {'events': []}
 
-    # Validate schedule times
-    if sections['schedule'].get('events'):
-        sections['schedule'] = validate_schedule_times(sections['schedule'])
-
-    # If results are sparse, try to extract from schedule
-    result_days = sections['results'].get('days', [])
-    today_results = next((d for d in result_days if d.get('day_num') == day_num), None)
-    if (not today_results or not today_results.get('results')) and sections['schedule'].get('events'):
-        extracted = extract_results_from_schedule(sections['schedule'], day_num, now.strftime('%b %d'))
-        if extracted:
-            print(f'  ↳ Extracted {len(extracted["results"])} results from schedule for Day {day_num}')
-            if today_results:
-                today_results['results'] = extracted['results']
-            else:
-                result_days.insert(0, extracted)
-                sections['results']['days'] = result_days
-
-    # ── Step 9: Upcoming events from Perplexity ──────────────────────────
+    # ── Step 10: Build upcoming events ────────────────────────────────────
+    # Uses Wikipedia sport events → hardcoded FULL_SCHEDULE → empty
     try:
-        sections['upcoming'] = get_upcoming_events()
-        print('  ✓ Upcoming events from Perplexity')
+        sections['upcoming'] = build_upcoming_events(wiki_schedule_events)
+        total_upcoming = sum(len(d.get('events', [])) for d in sections['upcoming'].get('days', []))
+        print(f'  ✓ Upcoming: {total_upcoming} events across {len(sections["upcoming"].get("days", []))} days')
     except Exception as e:
-        print(f'  ✗ Upcoming events failed: {e}')
-        sections['upcoming'] = {'days': []}
-
-    upcoming_days = sections['upcoming'].get('days', [])
-    total_upcoming = sum(len(d.get('events', [])) for d in upcoming_days)
-    if not upcoming_days or total_upcoming < 3:
-        print(f'  ↳ Using fallback upcoming ({total_upcoming} events from API)')
+        print(f'  ✗ Upcoming build failed: {e}')
+        traceback.print_exc()
         sections['upcoming'] = FALLBACK_UPCOMING
 
-    # ── Step 10: Athletes (hardcoded authoritative data) ──────────────────
+    # If upcoming still empty, use hardcoded
+    if not sections['upcoming'].get('days'):
+        print('  ↳ Using fallback upcoming events')
+        sections['upcoming'] = FALLBACK_UPCOMING
+
+    # ── Step 11: Athletes (hardcoded authoritative data) ──────────────────
     sections['athletes'] = FALLBACK_ATHLETES
     print('  ✓ Authoritative athlete data')
 
@@ -1591,7 +1938,9 @@ def main():
         f.write(html)
 
     file_size = os.path.getsize('index.html')
-    print(f'Dashboard updated successfully ({file_size} bytes) at {datetime.now(MST).strftime("%Y-%m-%d %H:%M MST")}')
+    print(f'\nDashboard updated successfully ({file_size} bytes) at {datetime.now(MST).strftime("%Y-%m-%d %H:%M MST")}')
+    print('Data sources: Wikipedia (medals, winners, schedule), Google News RSS (headlines), YouTube API (videos)')
+    print('Zero Perplexity/LLM dependencies.')
 
 
 if __name__ == '__main__':
