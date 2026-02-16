@@ -196,16 +196,16 @@ FALLBACK_UPCOMING = {
 
 FALLBACK_VIDEOS = {
     'videos': [
-        {'title': "Team USA's Best Moments Day 6", 'url': 'https://www.youtube.com/watch?v=QxXl7mLf4JU', 'source': 'NBC Sports', 'emoji': '\U0001f1fa\U0001f1f8', 'date': 'Feb 13'},
-        {'title': "Team USA's Best Moments Day 5", 'url': 'https://www.youtube.com/watch?v=bV3L0HjPkI0', 'source': 'NBC Sports', 'emoji': '\U0001f1fa\U0001f1f8', 'date': 'Feb 12'},
-        {'title': 'Day 1 Standout Highlights', 'url': 'https://www.youtube.com/watch?v=rS9Kd0TlFbo', 'source': 'NBC Sports', 'emoji': '\U0001f3d4\ufe0f', 'date': 'Feb 8'},
-        {'title': 'Best Moments of Week 1', 'url': 'https://www.youtube.com/watch?v=EWqT03DUsYc', 'source': 'NBC Sports', 'emoji': '\u2744\ufe0f', 'date': 'Feb 14'},
-        {'title': 'Canada Smacks Switzerland 5-1 Hockey', 'url': 'https://www.youtube.com/watch?v=TgJ7BKVzfXw', 'source': 'NBC Sports', 'emoji': '\U0001f3d2', 'date': 'Feb 14'},
-        {'title': 'Jessie Diggins Silver Charge', 'url': 'https://www.youtube.com/watch?v=NkA8HJGPzGE', 'source': 'NBC Sports', 'emoji': '\u26f7\ufe0f', 'date': 'Feb 13'},
-        {'title': 'Chloe Kim Halfpipe Silver', 'url': 'https://www.youtube.com/watch?v=YpR3vMHpKVk', 'source': 'NBC Sports', 'emoji': '\U0001f3c2', 'date': 'Feb 13'},
-        {'title': 'Jordan Stolz Olympic Record Skate', 'url': 'https://www.youtube.com/watch?v=d2NjKM9F1VU', 'source': 'NBC Sports', 'emoji': '\u26f8\ufe0f', 'date': 'Feb 12'},
-        {'title': 'Figure Skating Team Event Gold', 'url': 'https://www.youtube.com/watch?v=h0G1CmJPZ_Q', 'source': 'NBC Sports', 'emoji': '\u26f8\ufe0f', 'date': 'Feb 10'},
-        {'title': 'Opening Ceremony Highlights', 'url': 'https://www.youtube.com/watch?v=7wNr0CG3MBA', 'source': 'NBC Sports', 'emoji': '\U0001f3c6', 'date': 'Feb 6'},
+        {'title': 'Opening Ceremony — Milano Cortina 2026', 'url': 'https://www.youtube.com/watch?v=3S3NGDO3XLo', 'source': 'Olympics', 'emoji': '\U0001f3c6', 'date': 'Feb 6'},
+        {'title': 'Jordan Stolz Wins 500m Gold — Olympic Record', 'url': 'https://www.olympics.com/en/milano-cortina-2026/videos/highlights', 'source': 'Olympics.com', 'emoji': '\u26f8\ufe0f', 'date': 'Feb 14'},
+        {'title': 'Federica Brignone Giant Slalom Gold at Home', 'url': 'https://www.olympics.com/en/milano-cortina-2026/videos/highlights', 'source': 'Olympics.com', 'emoji': '\u26f7\ufe0f', 'date': 'Feb 15'},
+        {'title': "Klaebo Makes History — 9th Winter Olympic Gold", 'url': 'https://www.olympics.com/en/milano-cortina-2026/videos/highlights', 'source': 'Olympics.com', 'emoji': '\U0001f3bf', 'date': 'Feb 15'},
+        {'title': "Chloe Kim's Halfpipe Silver — Final Olympic Run", 'url': 'https://www.nbcolympics.com/videos', 'source': 'NBC Olympics', 'emoji': '\U0001f3c2', 'date': 'Feb 12'},
+        {'title': "Ilia Malinin's Quad God Moment — Team Event Gold", 'url': 'https://www.nbcolympics.com/videos', 'source': 'NBC Olympics', 'emoji': '\u26f8\ufe0f', 'date': 'Feb 10'},
+        {'title': 'Jessie Diggins Bronze — Cross-Country Legend', 'url': 'https://www.nbcolympics.com/videos', 'source': 'NBC Olympics', 'emoji': '\u26f7\ufe0f', 'date': 'Feb 13'},
+        {'title': 'Elizabeth Lemley Moguls Gold at 20 Years Old', 'url': 'https://www.nbcolympics.com/videos', 'source': 'NBC Olympics', 'emoji': '\U0001f3d4\ufe0f', 'date': 'Feb 11'},
+        {'title': 'Femke Kok Breaks Olympic Record — Women\'s 500m', 'url': 'https://www.olympics.com/en/milano-cortina-2026/videos/highlights', 'source': 'Olympics.com', 'emoji': '\u26f8\ufe0f', 'date': 'Feb 15'},
+        {'title': 'Best of Week 1 — Milano Cortina 2026', 'url': 'https://www.olympics.com/en/milano-cortina-2026/videos/highlights', 'source': 'Olympics.com', 'emoji': '\u2744\ufe0f', 'date': 'Feb 14'},
     ]
 }
 
@@ -1449,7 +1449,7 @@ h1 {{ font-size: 2rem; color: var(--accent); font-weight: 800; }}
 .stat-box {{ background: var(--bg-card); border: 1px solid var(--bg-muted); border-radius: 10px; padding: 14px; text-align: center; }}
 .stat-box .label {{ font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }}
 .stat-box .value {{ font-size: 1.7rem; font-weight: 800; color: var(--accent); margin-top: 2px; }}
-.grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }}
+.grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; align-items: stretch; }}
 .grid.full {{ grid-template-columns: 1fr; }}
 .panel {{ background: var(--bg-card); border: 1px solid var(--bg-muted); border-radius: 10px; padding: 20px; overflow-y: auto; max-height: 600px; }}
 .panel.tall {{ max-height: 800px; }}
@@ -1623,7 +1623,7 @@ tr:hover td {{ background: rgba(56,189,248,0.04); }}
 </div>
 
 <div class="grid">
-<div class="panel">
+<div class="panel tall">
 <div class="panel-hdr">&#x1F1FA;&#x1F1F8; USA Athlete Spotlights</div>
 <div class="evt-list">
 {athlete_cards}</div>
