@@ -93,28 +93,26 @@ FALLBACK_MEDALS = {
 
 FALLBACK_USA = {
     'sports': [
-        {'sport': 'Speed Skating', 'gold': 2, 'silver': 0, 'bronze': 0},
-        {'sport': 'Alpine Skiing', 'gold': 1, 'silver': 0, 'bronze': 1},
-        {'sport': 'Figure Skating', 'gold': 1, 'silver': 1, 'bronze': 0},
-        {'sport': 'Freestyle Skiing (Moguls)', 'gold': 1, 'silver': 2, 'bronze': 1},
-        {'sport': 'Snowboard', 'gold': 0, 'silver': 1, 'bronze': 0},
-        {'sport': 'Cross-Country Skiing', 'gold': 0, 'silver': 1, 'bronze': 1},
-        {'sport': 'Freestyle Skiing (Slopestyle)', 'gold': 0, 'silver': 1, 'bronze': 0},
-        {'sport': 'Alpine Skiing (Team)', 'gold': 0, 'silver': 0, 'bronze': 1},
+        {'sport': 'Speed Skating', 'gold': 3, 'silver': 0, 'bronze': 0},
+        {'sport': 'Freestyle Skiing', 'gold': 1, 'silver': 2, 'bronze': 1},
+        {'sport': 'Alpine Skiing', 'gold': 1, 'silver': 0, 'bronze': 0},
+        {'sport': 'Figure Skating', 'gold': 2, 'silver': 1, 'bronze': 0},
+        {'sport': 'Snowboarding', 'gold': 0, 'silver': 1, 'bronze': 0},
+        {'sport': 'Cross-Country Skiing', 'gold': 0, 'silver': 0, 'bronze': 1},
     ],
     'total_gold': 5, 'total_silver': 8, 'total_bronze': 4, 'total': 17
 }
 
 FALLBACK_ATHLETES = {
     'athletes': [
-        {'name': 'Jordan Stolz', 'sport': 'Speed Skating', 'medals': [{'event': '1000m', 'type': 'gold', 'emoji': '\U0001f947'}, {'event': '500m', 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': 'Won two gold medals with Olympic records in both the 1000m and 500m. First American since 1980 to win multiple speedskating golds at a single Olympics.'},
-        {'name': 'Breezy Johnson', 'sport': 'Alpine Skiing', 'medals': [{'event': "Women's Downhill", 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': "Won gold in the women's downhill, becoming only the second American woman to accomplish the feat. First gold medal for Team USA at these Games."},
-        {'name': 'Elizabeth Lemley', 'sport': 'Freestyle Skiing', 'medals': [{'event': "Women's Moguls", 'type': 'gold', 'emoji': '\U0001f947'}, {'event': "Women's Dual Moguls", 'type': 'bronze', 'emoji': '\U0001f949'}], 'bio': "Won gold in her Olympic debut in women's moguls at just 20 years old, then added a bronze in dual moguls."},
-        {'name': 'Ilia Malinin', 'sport': 'Figure Skating', 'medals': [{'event': 'Team Event', 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': 'Known as the "Quad God," delivered a dominant performance helping Team USA win gold in the figure skating team event.'},
-        {'name': 'Ben Ogden', 'sport': 'Cross-Country Skiing', 'medals': [{'event': 'Sprint', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Became the first American man to win an Olympic medal in cross-country skiing since 1976, earning silver in the sprint.'},
-        {'name': 'Chloe Kim', 'sport': 'Snowboard Halfpipe', 'medals': [{'event': 'Halfpipe', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Two-time Olympic champion earned silver in the halfpipe, adding to her legendary Olympic career.'},
-        {'name': 'Chock & Bates', 'sport': 'Ice Dance', 'medals': [{'event': 'Ice Dance', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Madison Chock and Evan Bates earned silver in ice dance after being narrowly edged out of the top spot.'},
-        {'name': 'Jessie Diggins', 'sport': 'Cross-Country Skiing', 'medals': [{'event': 'Individual', 'type': 'bronze', 'emoji': '\U0001f949'}], 'bio': 'Continued her Olympic legacy with a bronze medal, further cementing her status as the greatest American cross-country skier.'},
+        {'name': 'Jordan Stolz', 'sport': 'Speed Skating', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/26864_HEADSHOT_1.png', 'medals': [{'event': '1000m', 'type': 'gold', 'emoji': '\U0001f947'}, {'event': '500m', 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': 'Won two gold medals with Olympic records in both the 1000m and 500m. First American since 1980 to win multiple speedskating golds at a single Olympics.'},
+        {'name': 'Breezy Johnson', 'sport': 'Alpine Skiing', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/25476_HEADSHOT_1.png', 'medals': [{'event': "Women's Downhill", 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': "Won gold in the women's downhill, becoming only the second American woman to accomplish the feat. First gold medal for Team USA at these Games."},
+        {'name': 'Elizabeth Lemley', 'sport': 'Freestyle Skiing', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/24147_HEADSHOT_1.png', 'medals': [{'event': "Women's Moguls", 'type': 'gold', 'emoji': '\U0001f947'}, {'event': "Women's Dual Moguls", 'type': 'bronze', 'emoji': '\U0001f949'}], 'bio': "Won gold in her Olympic debut in women's moguls at just 20 years old, then added a bronze in dual moguls."},
+        {'name': 'Ilia Malinin', 'sport': 'Figure Skating', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/24783_HEADSHOT_1.png', 'medals': [{'event': 'Team Event', 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': 'Known as the "Quad God," delivered a dominant performance helping Team USA win gold in the figure skating team event.'},
+        {'name': 'Ben Ogden', 'sport': 'Cross-Country Skiing', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/23880_HEADSHOT_1.png', 'medals': [{'event': 'Sprint', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Became the first American man to win an Olympic medal in cross-country skiing since 1976, earning silver in the sprint.'},
+        {'name': 'Chloe Kim', 'sport': 'Snowboard Halfpipe', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/25527_HEADSHOT_1.png', 'medals': [{'event': 'Halfpipe', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Two-time Olympic champion earned silver in the halfpipe, adding to her legendary Olympic career.'},
+        {'name': 'Chock & Bates', 'sport': 'Ice Dance', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/24804_HEADSHOT_1.png', 'medals': [{'event': 'Ice Dance', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Madison Chock and Evan Bates earned silver in ice dance after being narrowly edged out of the top spot.'},
+        {'name': 'Jessie Diggins', 'sport': 'Cross-Country Skiing', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/23904_HEADSHOT_1.png', 'medals': [{'event': 'Individual', 'type': 'bronze', 'emoji': '\U0001f949'}], 'bio': 'Continued her Olympic legacy with a bronze medal, further cementing her status as the greatest American cross-country skier.'},
     ]
 }
 
@@ -267,16 +265,22 @@ Return JSON:
 
 def get_today_schedule():
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get today's full 2026 Winter Olympics schedule and results (all events, not just medal events). Times should be in MST (Mountain Standard Time, UTC-7). For completed events include the medal winners.
+    return query_perplexity(f"""Today is {today}. Get today's full 2026 Winter Olympics COMPETITION schedule and results. IMPORTANT RULES:
+1. Use ACTUAL competition start times, NOT NBC TV broadcast or re-air times
+2. Do NOT include re-airs, replays, highlight shows, or TV programming
+3. Only include actual Olympic sporting events (competitions, heats, runs, rounds, matches)
+4. Times must be in MST (Mountain Standard Time, UTC-7) — CET minus 8 hours
+5. For completed events include the actual medal winners with country codes
+6. Include ALL events: medal events, heats, qualifying rounds, round-robin matches, semifinals
 Return JSON:
-{{"events": [{{"time_mst": "3:00 AM", "event": "Event name", "sport": "Sport", "status": "done|live|upcoming", "is_medal": true, "result": "\U0001f947 Winner (COUNTRY) \u2022 \U0001f948 Second \u2022 \U0001f949 Third"}}]}}""")
+{{"events": [{{"time_mst": "2:00 AM", "event": "Alpine Skiing - Men's Slalom Run 1", "sport": "Alpine Skiing", "status": "done|live|upcoming", "is_medal": true, "result": "\U0001f947 Winner (COUNTRY) \u2022 \U0001f948 Second \u2022 \U0001f949 Third"}}]}}""")
 
 
 def get_usa_breakdown():
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the current USA (United States) medal breakdown by sport for the 2026 Winter Olympics as of today. List EVERY sport where USA has won at least one medal. Be thorough.
+    return query_perplexity(f"""Today is {today}. Get the current USA (United States) medal breakdown by sport for the 2026 Winter Olympics as of today. IMPORTANT: List EVERY sport where USA has won at least one medal. Be thorough and complete. Known USA medalists include: Jordan Stolz (speed skating 1000m gold, 500m gold), Breezy Johnson (alpine downhill gold), Elizabeth Lemley (moguls gold, dual moguls bronze), Ilia Malinin/team (figure skating team event gold), figure skating ice dance (Chock & Bates silver), Ben Ogden (cross-country sprint silver), Chloe Kim (snowboard halfpipe silver), Jaelin Kauf (moguls silver, dual moguls silver), Jessie Diggins (cross-country bronze), plus any others. Verify totals add up correctly.
 Return JSON:
-{{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 1, "bronze": 0}}], "total_gold": 4, "total_silver": 7, "total_bronze": 3, "total": 14}}""")
+{{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 0, "bronze": 0}}], "total_gold": 5, "total_silver": 8, "total_bronze": 4, "total": 17}}""")
 
 
 def get_latest_results():
@@ -286,7 +290,7 @@ def get_latest_results():
     d2 = (now - timedelta(days=1)).strftime('%b %d')
     d3 = (now - timedelta(days=2)).strftime('%b %d')
     day_num = max(1, (now - GAMES_START).days + 1)
-    return query_perplexity(f"""Today is {today}. Get ALL medal event results from the last 3 days of the 2026 Winter Olympics: {d1} (Day {day_num}), {d2} (Day {day_num-1}), and {d3} (Day {day_num-2}). Include the gold, silver, and bronze medalists with their country code for EVERY medal event. If you don't know a specific medalist, use "TBD" instead of "None".
+    return query_perplexity(f"""Today is {today}. Get ALL medal event results from the last 3 days of the 2026 Winter Olympics: {d1} (Day {day_num}), {d2} (Day {day_num-1}), and {d3} (Day {day_num-2}). Include the gold, silver, and bronze medalists with their country code for EVERY medal event completed so far. If today's medal events haven't happened yet, return an empty results array for today. If you don't know a specific medalist, use "TBD" instead of omitting them.
 Return JSON:
 {{"days": [{{"day_num": {day_num}, "date": "{d1}", "results": [{{"event": "Men's Cross-Country 15km", "gold": "Klaebo (NOR)", "silver": "Ogden (USA)", "bronze": "Niskanen (FIN)"}}]}}]}}""", max_tokens=6000)
 
@@ -305,13 +309,26 @@ Return JSON:
 {{"videos": [{{"title": "Short title", "url": "https://www.youtube.com/watch?v=VIDEO_ID", "source": "NBC Olympics", "emoji": "\u26f8\ufe0f", "date": "Feb 14"}}]}}""")
 
 
+def get_country_medal_details():
+    """Get per-event medal breakdown for top countries."""
+    today = _today_str()
+    return query_perplexity(f"""Today is {today}. For the top 10 countries in the 2026 Milano Cortina Winter Olympics medal table, list EVERY medal they have won so far, organized by country. For each medal, include the event name, medal type (gold/silver/bronze), and the athlete name(s).
+Return JSON:
+{{"countries": [{{"country": "Norway", "code": "NOR", "events": [{{"event": "Cross-Country Skiing Men's 4x7.5km Relay", "medal": "gold", "athlete": "Norway Team"}}]}}]}}""", max_tokens=6000)
+
+
 def get_upcoming_events():
     today = _today_str()
     now = datetime.now(MST)
     tmrw = (now + timedelta(days=1)).strftime('%b %d')
-    return query_perplexity(f"""Today is {today}. Get the upcoming events for the next 3 days of the 2026 Winter Olympics (starting from {tmrw}). Include individual events with their times in MST. Mark medal events.
+    day_num = max(1, (now - GAMES_START).days + 1)
+    return query_perplexity(f"""Today is {today}. Get the upcoming COMPETITION schedule for the next 2-3 days of the 2026 Winter Olympics (starting from tomorrow, {tmrw}, Day {day_num + 1}). IMPORTANT RULES:
+1. Use ACTUAL competition start times from olympics.com, NOT TV broadcast times
+2. Times must be in MST (Mountain Standard Time, UTC-7) — CET minus 8 hours
+3. Only include actual sporting events, not TV re-airs or highlight shows
+4. Mark which events are medal events
 Return JSON:
-{{"days": [{{"day_num": 11, "date": "{tmrw}", "day_of_week": "{(now + timedelta(days=1)).strftime('%a')}", "medal_count": 8, "events": [{{"time_mst": "3:00 AM", "event": "Alpine: Men's Giant Slalom", "is_medal": true, "iso_date": "{(now + timedelta(days=1)).strftime('%Y-%m-%d')}T03:00:00-07:00"}}]}}]}}""", max_tokens=6000)
+{{"days": [{{"day_num": {day_num + 1}, "date": "{tmrw}", "day_of_week": "{(now + timedelta(days=1)).strftime('%a')}", "medal_count": 8, "events": [{{"time_mst": "2:00 AM", "event": "Alpine Skiing - Men's Giant Slalom", "is_medal": true, "iso_date": "{(now + timedelta(days=1)).strftime('%Y-%m-%d')}T02:00:00-07:00"}}]}}]}}""", max_tokens=6000)
 
 
 # ── HTML Generators ────────────────────────────────────────────────────────
@@ -326,12 +343,39 @@ def _extract_youtube_id(url):
     return m.group(1) if m else None
 
 
-def build_medal_table_rows(medals):
+def build_medal_table_rows(medals, country_details=None):
+    """Build medal table with expandable per-event details."""
+    # Build lookup from country code to event details
+    details_map = {}
+    if country_details and 'countries' in country_details:
+        for c in country_details['countries']:
+            code = c.get('code', '')
+            details_map[code] = c.get('events', [])
+
     rows = ''
     for m in medals.get('medals', []):
-        us = ' class="us-row"' if m.get('code') == 'USA' else ''
+        code = m.get('code', '')
+        us = ' us-row' if code == 'USA' else ''
         flag = m.get('flag', '')
-        rows += f'<tr{us}><td class="rk">{m["rank"]}</td><td class="country-name">{flag} {html_escape(m["country"])}</td><td class="g">{m["gold"]}</td><td class="s">{m["silver"]}</td><td class="b">{m["bronze"]}</td><td class="tot">{m["total"]}</td></tr>\n'
+        events = details_map.get(code, [])
+        has_details = len(events) > 0
+        expand_cls = ' expandable' if has_details else ''
+        arrow = '<span class="expand-arrow">\u25B6</span> ' if has_details else ''
+        onclick = f' onclick="toggleCountry(this)"' if has_details else ''
+
+        rows += f'<tr class="country-row{us}{expand_cls}"{onclick}><td class="rk">{m["rank"]}</td><td class="country-name">{arrow}{flag} {html_escape(m["country"])}</td><td class="g">{m["gold"]}</td><td class="s">{m["silver"]}</td><td class="b">{m["bronze"]}</td><td class="tot">{m["total"]}</td></tr>\n'
+
+        if has_details:
+            detail_rows = ''
+            for evt in events:
+                medal_type = evt.get('medal', 'gold')
+                medal_cls = {'gold': 'g', 'silver': 's', 'bronze': 'b'}.get(medal_type, 'g')
+                medal_emoji = {'gold': '\U0001f947', 'silver': '\U0001f948', 'bronze': '\U0001f949'}.get(medal_type, '\U0001f947')
+                athlete = html_escape(evt.get('athlete', ''))
+                event_name = html_escape(evt.get('event', ''))
+                detail_rows += f'<div class="medal-detail-item"><span class="medal-detail-emoji {medal_cls}">{medal_emoji}</span><span class="medal-detail-event">{event_name}</span><span class="medal-detail-athlete">{athlete}</span></div>\n'
+            rows += f'<tr class="country-detail-row" style="display:none;"><td colspan="6"><div class="medal-details">{detail_rows}</div></td></tr>\n'
+
     return rows
 
 
@@ -387,8 +431,12 @@ def build_results_tabs(results):
         tabs += f'<button class="day-tab{active}" onclick="showDay(\'{day_id}\', this)">Day {day["day_num"]} ({html_escape(day["date"])})</button>\n'
 
         cards = ''
-        for r in day.get('results', []):
-            cards += f'<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">\U0001f947 {html_escape(r["event"])}</span><span class="athlete-medal-tag g">Day {day["day_num"]}</span></div><div class="athlete-bio">\U0001f947 {html_escape(r["gold"])} \u2022 \U0001f948 {html_escape(r["silver"])} \u2022 \U0001f949 {html_escape(r["bronze"])}</div></div>\n'
+        results_list = day.get('results', [])
+        if not results_list:
+            cards = '<div class="section-empty">\u23f3 Results pending \u2014 medal events in progress or upcoming today. Check back soon!</div>\n'
+        else:
+            for r in results_list:
+                cards += f'<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">\U0001f947 {html_escape(r["event"])}</span><span class="athlete-medal-tag g">Day {day["day_num"]}</span></div><div class="athlete-bio">\U0001f947 {html_escape(r["gold"])} \u2022 \U0001f948 {html_escape(r["silver"])} \u2022 \U0001f949 {html_escape(r["bronze"])}</div></div>\n'
         contents += f'<div id="{day_id}" class="day-content{active}">\n{cards}</div>\n'
 
     return f'<div class="day-tabs">\n{tabs}</div>\n{contents}'
@@ -470,7 +518,13 @@ def build_athlete_spotlights(athletes):
             color = medal_colors.get(medal, 'g')
             emoji = a.get('medal_emoji', '\U0001f947')
             medal_tags = f'<span class="athlete-medal-tag {color}">{emoji} {medal.title()}</span>'
-        cards += f'<div class="athlete-card"><div class="athlete-avatar {avatar_cls}">{initials}</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">{html_escape(name)} &bull; {html_escape(sport)}</span>{medal_tags}</div><div class="athlete-bio">{html_escape(a.get("bio", ""))}</div></div></div>\n'
+        # Add headshot image if URL available, fallback to initials
+        image_url = a.get('image', '')
+        if image_url:
+            avatar_inner = f'{initials}<img src="{html_escape(image_url)}" alt="{html_escape(name)}" onerror="this.style.display=\'none\'">'
+        else:
+            avatar_inner = initials
+        cards += f'<div class="athlete-card"><div class="athlete-avatar {avatar_cls}">{avatar_inner}</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">{html_escape(name)} &bull; {html_escape(sport)}</span>{medal_tags}</div><div class="athlete-bio">{html_escape(a.get("bio", ""))}</div></div></div>\n'
     return cards
 
 
@@ -504,7 +558,7 @@ def build_notifications(day_num, events_complete, total_events):
 
 # ── Main Template ──────────────────────────────────────────────────────────
 
-def generate_html(medal_data, schedule, usa, results, headlines, videos, athletes, upcoming):
+def generate_html(medal_data, schedule, usa, results, headlines, videos, athletes, upcoming, country_details=None):
     now = datetime.now(MST)
     timestamp = now.strftime('%a, %b %d %I:%M %p MST')
     data_date = now.strftime('%Y-%m-%d')
@@ -530,7 +584,7 @@ def generate_html(medal_data, schedule, usa, results, headlines, videos, athlete
         events_remaining = '?'
     usa_total = usa.get('total', 14)
 
-    medal_rows = build_medal_table_rows(medal_data)
+    medal_rows = build_medal_table_rows(medal_data, country_details)
     schedule_rows = build_schedule_rows(schedule)
     usa_rows = build_usa_breakdown(usa)
     results_html = build_results_tabs(results)
@@ -610,6 +664,16 @@ tr:hover td {{ background: rgba(56,189,248,0.04); }}
 .tot {{ font-weight: 800; }}
 .country-name {{ font-weight: 600; }}
 .us-row td {{ background: rgba(56,189,248,0.08); }}
+.country-row.expandable {{ cursor: pointer; }}
+.country-row.expandable:hover td {{ background: rgba(56,189,248,0.08); }}
+.expand-arrow {{ display: inline-block; font-size: 0.6rem; transition: transform 0.2s; margin-right: 4px; color: var(--text-muted); }}
+.country-row.expanded .expand-arrow {{ transform: rotate(90deg); }}
+.country-detail-row td {{ padding: 0 !important; border-bottom: 1px solid var(--bg-muted); }}
+.medal-details {{ padding: 8px 16px 8px 46px; background: var(--bg-surface); display: flex; flex-direction: column; gap: 4px; }}
+.medal-detail-item {{ display: flex; align-items: center; gap: 8px; font-size: 0.78rem; padding: 3px 0; }}
+.medal-detail-emoji {{ font-size: 0.82rem; min-width: 22px; }}
+.medal-detail-event {{ color: var(--text-primary); font-weight: 600; flex: 1; }}
+.medal-detail-athlete {{ color: var(--text-secondary); font-size: 0.75rem; }}
 .evt-list {{ display: flex; flex-direction: column; gap: 8px; }}
 .evt {{ background: var(--bg-surface); border-radius: 8px; padding: 10px 14px; border-left: 3px solid var(--bg-muted); display: flex; align-items: center; gap: 12px; }}
 .evt.medal-evt {{ border-left-color: var(--gold); }}
@@ -814,6 +878,15 @@ function refreshDashboard() {{
   }}, 500);
 }}
 
+function toggleCountry(row) {{
+  var detailRow = row.nextElementSibling;
+  if (detailRow && detailRow.classList.contains('country-detail-row')) {{
+    var isVisible = detailRow.style.display !== 'none';
+    detailRow.style.display = isVisible ? 'none' : 'table-row';
+    row.classList.toggle('expanded', !isVisible);
+  }}
+}}
+
 function showDay(id, btn) {{
   document.querySelectorAll('.day-content').forEach(function(el) {{ el.classList.remove('active'); }});
   document.querySelectorAll('.day-tab').forEach(function(el) {{ el.classList.remove('active'); }});
@@ -910,6 +983,7 @@ def main():
         'headlines': (get_headlines, {'headlines': []}),
         'videos': (get_video_highlights, {'videos': []}),
         'upcoming': (get_upcoming_events, {'days': []}),
+        'country_details': (get_country_medal_details, {'countries': []}),
     }
 
     # Athletes always use hardcoded authoritative data
@@ -938,7 +1012,7 @@ def main():
         html = generate_html(
             sections['medals'], sections['schedule'], sections['usa'],
             sections['results'], sections['headlines'], sections['videos'],
-            sections['athletes'], sections['upcoming']
+            sections['athletes'], sections['upcoming'], sections.get('country_details')
         )
     except Exception as e:
         print(f'FATAL: generate_html crashed: {e}')
