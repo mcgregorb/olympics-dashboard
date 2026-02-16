@@ -82,7 +82,7 @@ Return JSON:
 
 def get_usa_breakdown():
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the current USA medal breakdown by sport for the 2026 Winter Olympics as of today.
+    return query_perplexity(f"""Today is {today}. Get the current USA (United States) medal breakdown by sport for the 2026 Winter Olympics as of today. List EVERY sport where USA has won at least one medal. Be thorough — include alpine skiing, speed skating, figure skating, freestyle skiing, snowboard, bobsled, skeleton, cross-country, etc.
 Return JSON:
 {{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 1, "bronze": 0}}], "total_gold": 4, "total_silver": 7, "total_bronze": 3, "total": 14}}""")
 
@@ -93,9 +93,10 @@ def get_latest_results():
     d1 = now.strftime('%b %d')
     d2 = (now - timedelta(days=1)).strftime('%b %d')
     d3 = (now - timedelta(days=2)).strftime('%b %d')
-    return query_perplexity(f"""Today is {today}. Get the medal results from the last 3 days of the 2026 Winter Olympics: {d1}, {d2}, and {d3}. Group by day.
+    day_num = max(1, (now - GAMES_START).days + 1)
+    return query_perplexity(f"""Today is {today}. Get ALL medal event results from the last 3 days of the 2026 Winter Olympics: {d1} (Day {day_num}), {d2} (Day {day_num-1}), and {d3} (Day {day_num-2}). Include the gold, silver, and bronze medalists with their country code for EVERY medal event. If you don't know a specific medalist, use "TBD" instead of "None".
 Return JSON:
-{{"days": [{{"day_num": 10, "date": "{d1}", "results": [{{"event": "Men's Figure Skating", "gold": "Malinin (USA)", "silver": "Kagiyama (JPN)", "bronze": "Uno (JPN)"}}]}}]}}""", max_tokens=6000)
+{{"days": [{{"day_num": {day_num}, "date": "{d1}", "results": [{{"event": "Men's Cross-Country 15km", "gold": "Klaebo (NOR)", "silver": "Ogden (USA)", "bronze": "Niskanen (FIN)"}}]}}]}}""", max_tokens=6000)
 
 
 def get_headlines():
@@ -107,16 +108,16 @@ Return JSON:
 
 def get_video_highlights():
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Find 10 recent video highlight links from the 2026 Winter Olympics. Use real article/video page URLs from NBC Olympics, NBC News, Olympics.com, Today Show, CBS Sports, WGAL, WBAL, ESPN, etc. Include the sport emoji and a short title.
+    return query_perplexity(f"""Today is {today}. Find 10 recent video highlight links from the 2026 Winter Olympics. Use real article/video page URLs from NBC Olympics, NBC News, Olympics.com, Today Show, CBS Sports, WGAL, WBAL, ESPN, etc. Include the sport emoji, a short title, and a thumbnail_url (the Open Graph image or article thumbnail URL from the source page).
 Return JSON:
-{{"videos": [{{"title": "Short title", "url": "https://...", "source": "NBC Olympics", "emoji": "⛸️", "date": "{datetime.now(MST).strftime('%b %d')}"}}]}}""")
+{{"videos": [{{"title": "Short title", "url": "https://...", "source": "NBC Olympics", "emoji": "⛸️", "date": "{datetime.now(MST).strftime('%b %d')}", "thumbnail_url": "https://..."}}]}}""")
 
 
 def get_athlete_spotlights():
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the top 8 USA athlete stories from the 2026 Winter Olympics so far. Include their name, sport, medal won, and a 2-3 sentence bio about their performance and background.
+    return query_perplexity(f"""Today is {today}. Get the top 8 USA athlete stories from the 2026 Winter Olympics so far. Include their name, sport, medal won, a 2-3 sentence bio about their performance, and an image_url — use a real publicly accessible headshot/photo URL from Wikipedia, Wikimedia Commons, or Olympics.com. For the image URL, try to find their Wikipedia page image.
 Return JSON:
-{{"athletes": [{{"name": "Chloe Kim", "sport": "Snowboard Halfpipe", "medal": "silver", "medal_emoji": "🥈", "bio": "Two-time Olympic champion..."}}]}}""", max_tokens=5000)
+{{"athletes": [{{"name": "Chloe Kim", "sport": "Snowboard Halfpipe", "medal": "silver", "medal_emoji": "🥈", "bio": "Two-time Olympic champion...", "image_url": "https://upload.wikimedia.org/wikipedia/commons/..."}}]}}""", max_tokens=5000)
 
 
 def get_upcoming_events():
@@ -202,7 +203,7 @@ def build_headlines(headlines):
         url = html_escape(h.get('url', '#'))
         src = html_escape(h.get('source', ''))
         date = html_escape(h.get('date', ''))
-        rows += f'<div class="headline-item">><span class="hl-num">{i}</span><div><div class="hl-text"><a href="{url}" target="_blank">{html_escape(h["title"])}</a></div><div class="hl-src">{src} <span class="hl-date">{date}</span></div></div></div>\n'
+        rows += f'<div class="headline-item"><span class="hl-num">{i}</span><div><div class="hl-text"><a href="{url}" target="_blank">{html_escape(h["title"])}</a></div><div class="hl-src">{src} <span class="hl-date">{date}</span></div></div></div>\n'
     return rows
 
 
@@ -214,7 +215,12 @@ def build_video_cards(videos):
         grad = grads[i % len(grads)]
         emoji = v.get('emoji', '🏔️')
         url = html_escape(v.get('url', '#'))
-        cards += f'''<div class="video-card"><a href="{url}" target="_blank"><div class="vid-thumb"><div class="thumb-placeholder {grad}">{emoji}</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">{html_escape(v["title"])}</div><div class="vid-src">{html_escape(v.get("source",""))} • {html_escape(v.get("date",""))}</div></div></a></div>\n'''
+        thumb_url = v.get('thumbnail_url', '')
+        if thumb_url:
+            thumb_inner = f'<img src="{html_escape(thumb_url)}" alt="{html_escape(v["title"])}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="thumb-placeholder {grad}" style="display:none;">{emoji}</div>'
+        else:
+            thumb_inner = f'<div class="thumb-placeholder {grad}">{emoji}</div>'
+        cards += f'''<div class="video-card"><a href="{url}" target="_blank"><div class="vid-thumb">{thumb_inner}<div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">{html_escape(v["title"])}</div><div class="vid-src">{html_escape(v.get("source",""))} • {html_escape(v.get("date",""))}</div></div></a></div>\n'''
     return cards
 
 
@@ -299,6 +305,10 @@ def generate_html(medal_data, schedule, usa, results, headlines, videos, athlete
         remaining = max(0, 16 - int(day))
     except (TypeError, ValueError):
         remaining = '?'
+    try:
+        events_remaining = int(total_events) - int(events_complete)
+    except (TypeError, ValueError):
+        events_remaining = '?'
     usa_total = usa.get('total', 14)
 
     medal_rows = build_medal_table_rows(medal_data)
@@ -322,6 +332,7 @@ def generate_html(medal_data, schedule, usa, results, headlines, videos, athlete
         total_events=total_events,
         countries=countries,
         remaining=remaining,
+        events_remaining=events_remaining,
         medal_rows=medal_rows,
         schedule_rows=schedule_rows,
         usa_total=usa_total,
@@ -408,7 +419,8 @@ tr:hover td {{ background: rgba(56,189,248,0.04); }}
 .hl-src {{ font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }}
 .hl-date {{ font-size: 0.7rem; color: var(--accent); opacity: 0.7; margin-left: 4px; }}
 .athlete-card {{ background: var(--bg-surface); border-radius: 8px; padding: 14px 16px; margin-bottom: 8px; display: flex; gap: 14px; align-items: flex-start; }}
-.athlete-avatar {{ width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: #fff; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.12); text-shadow: 0 1px 3px rgba(0,0,0,0.4); }}
+.athlete-avatar {{ width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: #fff; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.12); text-shadow: 0 1px 3px rgba(0,0,0,0.4); position: relative; overflow: hidden; }}
+.athlete-avatar img {{ position: absolute; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; top: 0; left: 0; }}
 .avatar-snow {{ background: linear-gradient(135deg, #06b6d4, #3b82f6); }}
 .avatar-speed {{ background: linear-gradient(135deg, #f59e0b, #ef4444); }}
 .avatar-figure {{ background: linear-gradient(135deg, #8b5cf6, #ec4899); }}
@@ -494,7 +506,7 @@ tr:hover td {{ background: rgba(56,189,248,0.04); }}
 <div class="stat-box"><div class="label">Medal Events Today</div><div class="value">{medal_today}</div></div>
 <div class="stat-box"><div class="label">Events Completed</div><div class="value">{events_complete}</div></div>
 <div class="stat-box"><div class="label">Total Events</div><div class="value">{total_events}</div></div>
-<div class="stat-box"><div class="label">Countries w/ Medals</div><div class="value">{countries}</div></div>
+<div class="stat-box"><div class="label">Events Remaining</div><div class="value">{events_remaining}</div></div>
 <div class="stat-box"><div class="label">Days Remaining</div><div class="value" id="stat-remaining">{remaining}</div></div>
 </div>
 
@@ -523,9 +535,14 @@ tr:hover td {{ background: rgba(56,189,248,0.04); }}
 {results_html}</div>
 </div>
 
-<div class="grid full">
+<div class="grid">
+<div class="panel">
+<div class="panel-hdr">&#x1F1FA;&#x1F1F8; USA Athlete Spotlights</div>
+<div class="evt-list">
+{athlete_cards}</div>
+</div>
 <div class="panel tall">
-<div class="panel-hdr">&#x1F4C6; Upcoming Events &mdash; Set Reminders for Individual Events</div>
+<div class="panel-hdr">&#x1F4C6; Upcoming Events &mdash; Set Reminders</div>
 <div id="upcoming-events">
 {upcoming_rows}</div>
 </div>
@@ -535,14 +552,6 @@ tr:hover td {{ background: rgba(56,189,248,0.04); }}
 <div class="panel">
 <div class="panel-hdr">&#x1F4F0; Top 10 Headlines</div>
 {headline_rows}</div>
-<div class="panel">
-<div class="panel-hdr">&#x1F1FA;&#x1F1F8; USA Athlete Spotlights</div>
-<div class="evt-list">
-{athlete_cards}</div>
-</div>
-</div>
-
-<div class="grid full">
 <div class="panel">
 <div class="panel-hdr">&#x1F3AC; Top Video Highlights</div>
 <div class="video-grid">
