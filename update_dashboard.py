@@ -141,6 +141,21 @@ FALLBACK_UPCOMING = {
     ]
 }
 
+FALLBACK_VIDEOS = {
+    'videos': [
+        {'title': "Team USA's Best Moments Day 6", 'url': 'https://www.youtube.com/watch?v=QxXl7mLf4JU', 'source': 'NBC Sports', 'emoji': '\U0001f1fa\U0001f1f8', 'date': 'Feb 13'},
+        {'title': "Team USA's Best Moments Day 5", 'url': 'https://www.youtube.com/watch?v=bV3L0HjPkI0', 'source': 'NBC Sports', 'emoji': '\U0001f1fa\U0001f1f8', 'date': 'Feb 12'},
+        {'title': 'Day 1 Standout Highlights', 'url': 'https://www.youtube.com/watch?v=rS9Kd0TlFbo', 'source': 'NBC Sports', 'emoji': '\U0001f3d4\ufe0f', 'date': 'Feb 8'},
+        {'title': 'Best Moments of Week 1', 'url': 'https://www.youtube.com/watch?v=EWqT03DUsYc', 'source': 'NBC Sports', 'emoji': '\u2744\ufe0f', 'date': 'Feb 14'},
+        {'title': 'Canada Smacks Switzerland 5-1 Hockey', 'url': 'https://www.youtube.com/watch?v=TgJ7BKVzfXw', 'source': 'NBC Sports', 'emoji': '\U0001f3d2', 'date': 'Feb 14'},
+        {'title': 'Jessie Diggins Silver Charge', 'url': 'https://www.youtube.com/watch?v=NkA8HJGPzGE', 'source': 'NBC Sports', 'emoji': '\u26f7\ufe0f', 'date': 'Feb 13'},
+        {'title': 'Chloe Kim Halfpipe Silver', 'url': 'https://www.youtube.com/watch?v=YpR3vMHpKVk', 'source': 'NBC Sports', 'emoji': '\U0001f3c2', 'date': 'Feb 13'},
+        {'title': 'Jordan Stolz Olympic Record Skate', 'url': 'https://www.youtube.com/watch?v=d2NjKM9F1VU', 'source': 'NBC Sports', 'emoji': '\u26f8\ufe0f', 'date': 'Feb 12'},
+        {'title': 'Figure Skating Team Event Gold', 'url': 'https://www.youtube.com/watch?v=h0G1CmJPZ_Q', 'source': 'NBC Sports', 'emoji': '\u26f8\ufe0f', 'date': 'Feb 10'},
+        {'title': 'Opening Ceremony Highlights', 'url': 'https://www.youtube.com/watch?v=7wNr0CG3MBA', 'source': 'NBC Sports', 'emoji': '\U0001f3c6', 'date': 'Feb 6'},
+    ]
+}
+
 FALLBACK_ATHLETES = {
     'athletes': [
         {'name': 'Jordan Stolz', 'sport': 'Speed Skating', 'image': 'https://wmr-static-assets.scd.dgplatform.net/wmr/static/_IMAGE/OWG2026/DT_PIC/26864_HEADSHOT_1.png', 'medals': [{'event': '1000m', 'type': 'gold', 'emoji': '\U0001f947'}, {'event': '500m', 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': 'Won two gold medals with Olympic records in both the 1000m and 500m. First American since 1980 to win multiple speedskating golds at a single Olympics.'},
@@ -264,7 +279,7 @@ def query_perplexity(prompt, max_tokens=4000):
     payload = {
         'model': 'sonar',
         'messages': [
-            {'role': 'system', 'content': 'You are a sports data assistant for the 2026 Milano Cortina Winter Olympics. Return ONLY valid JSON. No markdown, no code fences, no extra text. Be accurate with medal counts and results.'},
+            {'role': 'system', 'content': 'You are a sports data assistant for the 2026 Milano Cortina Winter Olympics. Return ONLY valid JSON. No markdown, no code fences, no extra text. Be accurate with medal counts and results. Use web search to find current, accurate data from olympics.com, nbcolympics.com, and other authoritative sources.'},
             {'role': 'user', 'content': prompt}
         ],
         'max_tokens': max_tokens,
@@ -278,6 +293,36 @@ def query_perplexity(prompt, max_tokens=4000):
         content = content.split('\n', 1)[1]
         content = content.rsplit('```', 1)[0].strip()
     return json.loads(content)
+
+
+def query_perplexity_validated(prompt, validator, corrective_prompt_fn, max_tokens=4000, max_retries=2):
+    """Query Perplexity with validation and retry.
+
+    Args:
+        prompt: Initial prompt
+        validator: Function(data) -> (is_valid: bool, error_msg: str)
+        corrective_prompt_fn: Function(data, error_msg) -> new_prompt
+        max_tokens: Token limit
+        max_retries: Number of retry attempts
+    Returns:
+        Validated data dict, or raises on total failure
+    """
+    data = query_perplexity(prompt, max_tokens)
+    is_valid, error_msg = validator(data)
+    if is_valid:
+        return data
+
+    for attempt in range(max_retries):
+        print(f'    Retry {attempt+1}: {error_msg}')
+        retry_prompt = corrective_prompt_fn(data, error_msg)
+        data = query_perplexity(retry_prompt, max_tokens)
+        is_valid, error_msg = validator(data)
+        if is_valid:
+            return data
+
+    # Return last attempt even if not perfect — fallback logic handles the rest
+    print(f'    Validation still failing after {max_retries} retries: {error_msg}')
+    return data
 
 
 # ── Data Fetchers ──────────────────────────────────────────────────────────
@@ -314,11 +359,34 @@ Return JSON:
 {{"events": [{{"time_mst": "2:00 AM", "event": "Alpine Skiing - Men's Slalom Run 1", "sport": "Alpine Skiing", "status": "done|live|upcoming", "is_medal": true, "result": "\U0001f947 Winner (COUNTRY) \u2022 \U0001f948 Second \u2022 \U0001f949 Third"}}]}}""")
 
 
-def get_usa_breakdown():
+def get_usa_breakdown(expected_total=None):
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the current USA (United States) medal breakdown by sport for the 2026 Winter Olympics as of today. IMPORTANT: List EVERY sport where USA has won at least one medal. Be thorough and complete. Known USA medalists include: Jordan Stolz (speed skating 1000m gold, 500m gold), Breezy Johnson (alpine downhill gold), Elizabeth Lemley (moguls gold, dual moguls bronze), Ilia Malinin/team (figure skating team event gold), figure skating ice dance (Chock & Bates silver), Ben Ogden (cross-country sprint silver), Chloe Kim (snowboard halfpipe silver), Jaelin Kauf (moguls silver, dual moguls silver), Jessie Diggins (cross-country bronze), plus any others. Verify totals add up correctly.
+    total_hint = f' The USA medal table currently shows {expected_total} total medals — your sport-by-sport breakdown MUST sum to exactly {expected_total}.' if expected_total else ''
+
+    base_prompt = f"""Today is {today}. Search olympics.com and nbcolympics.com for the current USA (United States) medal breakdown by sport for the 2026 Winter Olympics.{total_hint} IMPORTANT: List EVERY sport where USA has won at least one medal. Be thorough and complete. Verify gold+silver+bronze totals per sport and overall totals add up correctly.
 Return JSON:
-{{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 0, "bronze": 0}}], "total_gold": 5, "total_silver": 8, "total_bronze": 4, "total": 17}}""")
+{{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 0, "bronze": 0}}], "total_gold": 5, "total_silver": 8, "total_bronze": 4, "total": 17}}"""
+
+    def validator(data):
+        sports = data.get('sports', [])
+        if not sports:
+            return False, 'No sports returned'
+        computed = sum(s.get('gold', 0) + s.get('silver', 0) + s.get('bronze', 0) for s in sports)
+        claimed = data.get('total', 0)
+        if computed != claimed:
+            return False, f'Sport totals sum to {computed} but claimed total is {claimed}'
+        if expected_total and computed != expected_total:
+            return False, f'Sport totals sum to {computed} but medal table shows {expected_total}'
+        if computed < 10:
+            return False, f'Only {computed} total medals — suspiciously low'
+        return True, ''
+
+    def corrective(data, error):
+        return f"""Your previous answer was incorrect: {error}. Please search olympics.com again for the USA medal breakdown at the 2026 Winter Olympics.{total_hint} Count EVERY medal carefully: Jordan Stolz (speed skating 2 golds), Breezy Johnson (alpine 1 gold), Elizabeth Lemley (freestyle moguls gold + dual moguls bronze), Figure skating team gold, Chock/Bates ice dance silver, Ben Ogden cross-country sprint silver, Chloe Kim snowboard halfpipe silver, Jaelin Kauf moguls silver + dual moguls silver, Alex Hall slopestyle silver, Jessie Diggins cross-country bronze, alpine team event bronze, short track mixed relay medals. Include ALL of these and any others.
+Return JSON:
+{{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 0, "bronze": 0}}], "total_gold": 5, "total_silver": 8, "total_bronze": 4, "total": 17}}"""
+
+    return query_perplexity_validated(base_prompt, validator, corrective)
 
 
 def get_latest_results():
@@ -360,11 +428,13 @@ def get_upcoming_events():
     now = datetime.now(MST)
     tmrw = (now + timedelta(days=1)).strftime('%b %d')
     day_num = max(1, (now - GAMES_START).days + 1)
-    return query_perplexity(f"""Today is {today}. Get the upcoming COMPETITION schedule for the next 2-3 days of the 2026 Winter Olympics (starting from tomorrow, {tmrw}, Day {day_num + 1}). IMPORTANT RULES:
+    return query_perplexity(f"""Today is {today}. Search olympics.com for the upcoming COMPETITION schedule for the next 2-3 days of the 2026 Winter Olympics (starting from tomorrow, {tmrw}, Day {day_num + 1}). IMPORTANT RULES:
 1. Use ACTUAL competition start times from olympics.com, NOT TV broadcast times
 2. Times must be in MST (Mountain Standard Time, UTC-7) — CET minus 8 hours
 3. Only include actual sporting events, not TV re-airs or highlight shows
 4. Mark which events are medal events
+5. Return at least 5 specific events per day with their times
+6. Include iso_date for each event in ISO format with -07:00 offset
 Return JSON:
 {{"days": [{{"day_num": {day_num + 1}, "date": "{tmrw}", "day_of_week": "{(now + timedelta(days=1)).strftime('%a')}", "medal_count": 8, "events": [{{"time_mst": "2:00 AM", "event": "Alpine Skiing - Men's Giant Slalom", "is_medal": true, "iso_date": "{(now + timedelta(days=1)).strftime('%Y-%m-%d')}T02:00:00-07:00"}}]}}]}}""", max_tokens=6000)
 
@@ -1002,6 +1072,85 @@ setInterval(function() {{ location.reload(); }}, 1800000);
 </html>'''
 
 
+# ── Post-Processing / Validation Helpers ──────────────────────────────────
+
+def extract_results_from_schedule(schedule, day_num, date_str):
+    """Extract medal results from today's schedule when results API returns empty.
+    Uses events marked as 'done' with is_medal=True that have result text."""
+    results = []
+    for evt in schedule.get('events', []):
+        if evt.get('status') == 'done' and evt.get('is_medal') and evt.get('result'):
+            raw = evt.get('result', '')
+            if 'TBD' in raw:
+                continue
+            # Parse result string like "🥇 Name (CODE) • 🥈 Name • 🥉 Name"
+            parts = re.split(r'\s*[•·|]\s*', raw)
+            gold = silver = bronze = ''
+            for p in parts:
+                p = p.strip()
+                if '\U0001f947' in p or 'gold' in p.lower():
+                    gold = re.sub(r'[\U0001f947\U0001f948\U0001f949]', '', p).strip()
+                elif '\U0001f948' in p or 'silver' in p.lower():
+                    silver = re.sub(r'[\U0001f947\U0001f948\U0001f949]', '', p).strip()
+                elif '\U0001f949' in p or 'bronze' in p.lower():
+                    bronze = re.sub(r'[\U0001f947\U0001f948\U0001f949]', '', p).strip()
+            if not gold and len(parts) >= 1:
+                gold = re.sub(r'[\U0001f947\U0001f948\U0001f949]', '', parts[0]).strip()
+            if not silver and len(parts) >= 2:
+                silver = re.sub(r'[\U0001f947\U0001f948\U0001f949]', '', parts[1]).strip()
+            if not bronze and len(parts) >= 3:
+                bronze = re.sub(r'[\U0001f947\U0001f948\U0001f949]', '', parts[2]).strip()
+            if gold:
+                results.append({
+                    'event': evt.get('event', ''),
+                    'gold': gold,
+                    'silver': silver or 'TBD',
+                    'bronze': bronze or 'TBD',
+                })
+    if results:
+        return {'day_num': day_num, 'date': date_str, 'results': results}
+    return None
+
+
+def deduplicate_videos(videos):
+    """Remove videos with duplicate YouTube IDs. First occurrence wins."""
+    seen_ids = set()
+    unique = []
+    for v in videos.get('videos', []):
+        yt_id = _extract_youtube_id(v.get('url', ''))
+        if yt_id and yt_id in seen_ids:
+            continue
+        if yt_id:
+            seen_ids.add(yt_id)
+        unique.append(v)
+    return {'videos': unique}
+
+
+def validate_schedule_times(schedule):
+    """Flag events with implausible MST times.
+    Most events in Italy happen 8AM-11PM CET = midnight-4PM MST.
+    Events outside midnight-5PM MST are suspicious."""
+    events = schedule.get('events', [])
+    validated = []
+    for evt in events:
+        time_str = evt.get('time_mst', '')
+        # Parse hour from time string like "2:00 AM" or "3:40 PM"
+        m = re.match(r'(\d{1,2}):(\d{2})\s*(AM|PM)', time_str, re.IGNORECASE)
+        if m:
+            hour = int(m.group(1))
+            ampm = m.group(3).upper()
+            if ampm == 'PM' and hour != 12:
+                hour += 12
+            elif ampm == 'AM' and hour == 12:
+                hour = 0
+            # Reject events after 5 PM MST (= midnight CET, events don't run that late)
+            if hour > 17:
+                print(f'  ! Dropping implausible schedule time: {time_str} for {evt.get("event", "")}')
+                continue
+        validated.append(evt)
+    return {'events': validated}
+
+
 # ── Entry Point ────────────────────────────────────────────────────────────
 
 def main():
@@ -1013,10 +1162,26 @@ def main():
 
     # Fetch all data sections (with fallbacks)
     sections = {}
+
+    # 1. Medal table first (needed to validate USA breakdown)
+    try:
+        sections['medals'] = get_medal_table()
+        print('  \u2713 Got medals')
+    except Exception as e:
+        print(f'  \u2717 medals failed: {e}')
+        sections['medals'] = FALLBACK_MEDALS
+
+    if not sections['medals'].get('medals'):
+        sections['medals'] = FALLBACK_MEDALS
+
+    # Find USA expected total from medal table for cross-validation
+    usa_row = next((m for m in sections['medals'].get('medals', []) if m.get('code') == 'USA'), None)
+    usa_expected = usa_row['total'] if usa_row else FALLBACK_USA['total']
+
+    # 2. Remaining fetchers
     fetchers = {
-        'medals': (get_medal_table, {'medals': [], 'day': '?', 'events_complete': '?', 'total_events': 116, 'medal_events_today': '?', 'countries_with_medals': '?'}),
         'schedule': (get_today_schedule, {'events': []}),
-        'usa': (get_usa_breakdown, {'sports': [], 'total': '?'}),
+        'usa': (lambda: get_usa_breakdown(expected_total=usa_expected), {'sports': [], 'total': '?'}),
         'results': (get_latest_results, {'days': []}),
         'headlines': (get_headlines, {'headlines': []}),
         'videos': (get_video_highlights, {'videos': []}),
@@ -1037,21 +1202,58 @@ def main():
             traceback.print_exc()
             sections[name] = fallback
 
-    # Smart fallback: use hardcoded data when sources returned empty/sparse results
+    # ── Smart validation & fallbacks ──────────────────────────────────────
+    # These checks catch the many ways Perplexity returns bad/incomplete data.
+
+    # 1. Medal table: use fallback if empty
     if not sections['medals'].get('medals'):
         print('  \u21b3 Using fallback medal data')
         sections['medals'] = FALLBACK_MEDALS
+
+    # 2. USA breakdown: cross-validate against medal table's USA row
     usa_sports = sections['usa'].get('sports', [])
-    usa_sport_total = sum(s.get('gold', 0) + s.get('silver', 0) + s.get('bronze', 0) for s in usa_sports)
-    if not usa_sports or usa_sport_total < 10:
-        # API returned empty or suspiciously incomplete data — use fallback
-        print(f'  \u21b3 Using fallback USA breakdown (API returned {usa_sport_total} medals across {len(usa_sports)} sports)')
+    usa_api_total = sum(s.get('gold', 0) + s.get('silver', 0) + s.get('bronze', 0) for s in usa_sports)
+    # Find USA in medal table to get the authoritative total
+    usa_medal_row = next((m for m in sections['medals'].get('medals', []) if m.get('code') == 'USA'), None)
+    usa_table_total = usa_medal_row['total'] if usa_medal_row else FALLBACK_USA['total']
+    if not usa_sports or usa_api_total != usa_table_total:
+        print(f'  \u21b3 Using fallback USA breakdown (API total {usa_api_total} != medal table {usa_table_total})')
         sections['usa'] = FALLBACK_USA
-    if not sections['upcoming'].get('days'):
-        print('  \u21b3 Using fallback upcoming events')
+
+    # 3. Upcoming events: check that days actually contain events, not just headers
+    upcoming_days = sections['upcoming'].get('days', [])
+    total_upcoming_events = sum(len(d.get('events', [])) for d in upcoming_days)
+    if not upcoming_days or total_upcoming_events < 3:
+        print(f'  \u21b3 Using fallback upcoming events (API returned {total_upcoming_events} events across {len(upcoming_days)} days)')
         sections['upcoming'] = FALLBACK_UPCOMING
 
-    # Generate and write HTML
+    # 4. Schedule: validate times are plausible MST (reject late-night events)
+    if sections['schedule'].get('events'):
+        sections['schedule'] = validate_schedule_times(sections['schedule'])
+
+    # 5. Results: if today's results are empty but schedule has FINAL medal events, extract them
+    now = datetime.now(MST)
+    day_num = max(1, (now - GAMES_START).days + 1)
+    result_days = sections['results'].get('days', [])
+    today_results = next((d for d in result_days if d.get('day_num') == day_num), None)
+    if (not today_results or not today_results.get('results')) and sections['schedule'].get('events'):
+        extracted = extract_results_from_schedule(sections['schedule'], day_num, now.strftime('%b %d'))
+        if extracted:
+            print(f'  \u21b3 Extracted {len(extracted["results"])} results from schedule for Day {day_num}')
+            # Replace or insert today's results
+            if today_results:
+                today_results['results'] = extracted['results']
+            else:
+                result_days.insert(0, extracted)
+                sections['results']['days'] = result_days
+
+    # 6. Videos: deduplicate by YouTube ID and fallback if too few unique videos
+    sections['videos'] = deduplicate_videos(sections['videos'])
+    if len(sections['videos'].get('videos', [])) < 4:
+        print(f'  \u21b3 Using fallback videos (only {len(sections["videos"].get("videos", []))} unique videos from API)')
+        sections['videos'] = FALLBACK_VIDEOS
+
+    # ── Generate and write HTML ───────────────────────────────────────────
     try:
         html = generate_html(
             sections['medals'], sections['schedule'], sections['usa'],
