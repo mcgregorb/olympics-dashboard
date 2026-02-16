@@ -59,52 +59,73 @@ def query_perplexity(prompt, max_tokens=4000):
 
 # ── Data Fetchers ──────────────────────────────────────────────────────────
 
+def _today_str():
+    """Return today's date string for prompt injection, e.g. 'February 15, 2026 (Day 10)'."""
+    now = datetime.now(MST)
+    day_num = max(1, (now - GAMES_START).days + 1)
+    return f'{now.strftime("%B %d, %Y")} (Day {day_num} of the Games)'
+
+
 def get_medal_table():
-    return query_perplexity("""Get the current 2026 Milano Cortina Winter Olympics medal count for the top 15 countries sorted by gold medals (then silver as tiebreaker). Include the current Games day number, events completed so far, and today's medal event count.
+    today = _today_str()
+    return query_perplexity(f"""Today is {today}. Get the current 2026 Milano Cortina Winter Olympics medal count as of today for the top 15 countries sorted by gold medals (then silver as tiebreaker). Include the current Games day number, events completed so far, and today's medal event count.
 Return JSON:
-{"medals": [{"rank": 1, "country": "Norway", "flag": "🇳🇴", "code": "NOR", "gold": 0, "silver": 0, "bronze": 0, "total": 0}], "day": 7, "events_complete": 51, "medal_events_today": 7, "total_events": 116, "countries_with_medals": 26}""")
+{{"medals": [{{"rank": 1, "country": "Norway", "flag": "🇳🇴", "code": "NOR", "gold": 0, "silver": 0, "bronze": 0, "total": 0}}], "day": 10, "events_complete": 51, "medal_events_today": 7, "total_events": 116, "countries_with_medals": 26}}""")
 
 
 def get_today_schedule():
-    return query_perplexity("""Get today's full 2026 Winter Olympics schedule and results (all events, not just medal events). Times should be in MST (Mountain Standard Time, UTC-7). For completed events include the medal winners.
+    today = _today_str()
+    return query_perplexity(f"""Today is {today}. Get today's full 2026 Winter Olympics schedule and results (all events, not just medal events). Times should be in MST (Mountain Standard Time, UTC-7). For completed events include the medal winners.
 Return JSON:
-{"events": [{"time_mst": "3:00 AM", "event": "Event name", "sport": "Sport", "status": "done|live|upcoming", "is_medal": true, "result": "🥇 Winner (COUNTRY) • 🥈 Second • 🥉 Third"}]}""")
+{{"events": [{{"time_mst": "3:00 AM", "event": "Event name", "sport": "Sport", "status": "done|live|upcoming", "is_medal": true, "result": "🥇 Winner (COUNTRY) • 🥈 Second • 🥉 Third"}}]}}""")
 
 
 def get_usa_breakdown():
-    return query_perplexity("""Get the current USA medal breakdown by sport for the 2026 Winter Olympics.
+    today = _today_str()
+    return query_perplexity(f"""Today is {today}. Get the current USA medal breakdown by sport for the 2026 Winter Olympics as of today.
 Return JSON:
-{"sports": [{"sport": "Speed Skating", "gold": 2, "silver": 1, "bronze": 0}], "total_gold": 4, "total_silver": 7, "total_bronze": 3, "total": 14}""")
+{{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 1, "bronze": 0}}], "total_gold": 4, "total_silver": 7, "total_bronze": 3, "total": 14}}""")
 
 
 def get_latest_results():
-    return query_perplexity("""Get the medal results from the last 3 days of the 2026 Winter Olympics (today and 2 prior days). Group by day.
+    today = _today_str()
+    now = datetime.now(MST)
+    d1 = now.strftime('%b %d')
+    d2 = (now - timedelta(days=1)).strftime('%b %d')
+    d3 = (now - timedelta(days=2)).strftime('%b %d')
+    return query_perplexity(f"""Today is {today}. Get the medal results from the last 3 days of the 2026 Winter Olympics: {d1}, {d2}, and {d3}. Group by day.
 Return JSON:
-{"days": [{"day_num": 7, "date": "Feb 13", "results": [{"event": "Men's Figure Skating", "gold": "Malinin (USA)", "silver": "Kagiyama (JPN)", "bronze": "Uno (JPN)"}]}]}""", max_tokens=6000)
+{{"days": [{{"day_num": 10, "date": "{d1}", "results": [{{"event": "Men's Figure Skating", "gold": "Malinin (USA)", "silver": "Kagiyama (JPN)", "bronze": "Uno (JPN)"}}]}}]}}""", max_tokens=6000)
 
 
 def get_headlines():
-    return query_perplexity("""Get the top 10 most important headlines from the 2026 Winter Olympics right now. Include real source URLs from major outlets (NBC, CNN, LA Times, Olympics.com, etc).
+    today = _today_str()
+    return query_perplexity(f"""Today is {today}. Get the top 10 most important headlines from the 2026 Winter Olympics as of today. Include real source URLs from major outlets (NBC, CNN, LA Times, Olympics.com, etc).
 Return JSON:
-{"headlines": [{"title": "Short headline", "source": "Source Name", "url": "https://...", "date": "Feb 13"}]}""")
+{{"headlines": [{{"title": "Short headline", "source": "Source Name", "url": "https://...", "date": "{datetime.now(MST).strftime('%b %d')}"}}]}}""")
 
 
 def get_video_highlights():
-    return query_perplexity("""Find 10 video highlight links from the 2026 Winter Olympics. Use real article/video page URLs from NBC Olympics, NBC News, Olympics.com, Today Show, CBS Sports, WGAL, WBAL, ESPN, etc. Include the sport emoji and a short title.
+    today = _today_str()
+    return query_perplexity(f"""Today is {today}. Find 10 recent video highlight links from the 2026 Winter Olympics. Use real article/video page URLs from NBC Olympics, NBC News, Olympics.com, Today Show, CBS Sports, WGAL, WBAL, ESPN, etc. Include the sport emoji and a short title.
 Return JSON:
-{"videos": [{"title": "Short title", "url": "https://...", "source": "NBC Olympics", "emoji": "⛸️", "date": "Feb 13"}]}""")
+{{"videos": [{{"title": "Short title", "url": "https://...", "source": "NBC Olympics", "emoji": "⛸️", "date": "{datetime.now(MST).strftime('%b %d')}"}}]}}""")
 
 
 def get_athlete_spotlights():
-    return query_perplexity("""Get the top 8 USA athlete stories from the 2026 Winter Olympics so far. Include their name, sport, medal won, and a 2-3 sentence bio about their performance and background.
+    today = _today_str()
+    return query_perplexity(f"""Today is {today}. Get the top 8 USA athlete stories from the 2026 Winter Olympics so far. Include their name, sport, medal won, and a 2-3 sentence bio about their performance and background.
 Return JSON:
-{"athletes": [{"name": "Chloe Kim", "sport": "Snowboard Halfpipe", "medal": "silver", "medal_emoji": "🥈", "bio": "Two-time Olympic champion..."}]}""", max_tokens=5000)
+{{"athletes": [{{"name": "Chloe Kim", "sport": "Snowboard Halfpipe", "medal": "silver", "medal_emoji": "🥈", "bio": "Two-time Olympic champion..."}}]}}""", max_tokens=5000)
 
 
 def get_upcoming_events():
-    return query_perplexity("""Get the upcoming events for the next 3 days of the 2026 Winter Olympics (starting from tomorrow). Include individual events with their times in MST. Mark medal events.
+    today = _today_str()
+    now = datetime.now(MST)
+    tmrw = (now + timedelta(days=1)).strftime('%b %d')
+    return query_perplexity(f"""Today is {today}. Get the upcoming events for the next 3 days of the 2026 Winter Olympics (starting from {tmrw}). Include individual events with their times in MST. Mark medal events.
 Return JSON:
-{"days": [{"day_num": 8, "date": "Feb 14", "day_of_week": "Sat", "medal_count": 8, "events": [{"time_mst": "3:00 AM", "event": "Alpine: Men's Giant Slalom", "is_medal": true, "iso_date": "2026-02-14T03:00:00-07:00"}]}]}""", max_tokens=6000)
+{{"days": [{{"day_num": 11, "date": "{tmrw}", "day_of_week": "{(now + timedelta(days=1)).strftime('%a')}", "medal_count": 8, "events": [{{"time_mst": "3:00 AM", "event": "Alpine: Men's Giant Slalom", "is_medal": true, "iso_date": "{(now + timedelta(days=1)).strftime('%Y-%m-%d')}T03:00:00-07:00"}}]}}]}}""", max_tokens=6000)
 
 
 # ── HTML Generators ────────────────────────────────────────────────────────
@@ -247,7 +268,10 @@ def build_upcoming_section(upcoming):
 
 def build_notifications(day_num, events_complete, total_events):
     """Build date-aware notification JS array for today's top results."""
-    remaining = max(0, 16 - day_num + 1)
+    try:
+        remaining = max(0, 16 - int(day_num) + 1)
+    except (TypeError, ValueError):
+        remaining = '?'
     return f"""  var medalQueue = [
     {{delay:12000, type:'notif-info', title:'Day {day_num} Results Updated', body:'{events_complete} of {total_events} events complete. {remaining} days remaining.'}},
   ];"""
@@ -260,12 +284,21 @@ def generate_html(medal_data, schedule, usa, results, headlines, videos, athlete
     timestamp = now.strftime('%a, %b %d %I:%M %p MST')
     data_date = now.strftime('%Y-%m-%d')
 
-    day = medal_data.get('day', '?')
+    # Calculate day from GAMES_START as fallback
+    computed_day = max(1, (now - GAMES_START).days + 1)
+    raw_day = medal_data.get('day', computed_day)
+    try:
+        day = int(raw_day)
+    except (TypeError, ValueError):
+        day = computed_day
     events_complete = medal_data.get('events_complete', '?')
     total_events = medal_data.get('total_events', 116)
     medal_today = medal_data.get('medal_events_today', '?')
     countries = medal_data.get('countries_with_medals', '?')
-    remaining = max(0, 16 - int(day)) if str(day).isdigit() else '?'
+    try:
+        remaining = max(0, 16 - int(day))
+    except (TypeError, ValueError):
+        remaining = '?'
     usa_total = usa.get('total', 14)
 
     medal_rows = build_medal_table_rows(medal_data)
@@ -683,16 +716,22 @@ def main():
             sections[name] = fallback
 
     # Generate and write HTML
-    html = generate_html(
-        sections['medals'], sections['schedule'], sections['usa'],
-        sections['results'], sections['headlines'], sections['videos'],
-        sections['athletes'], sections['upcoming']
-    )
+    try:
+        html = generate_html(
+            sections['medals'], sections['schedule'], sections['usa'],
+            sections['results'], sections['headlines'], sections['videos'],
+            sections['athletes'], sections['upcoming']
+        )
+    except Exception as e:
+        print(f'FATAL: generate_html crashed: {e}')
+        traceback.print_exc()
+        sys.exit(1)
 
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print(f'Dashboard updated successfully at {datetime.now(MST).strftime("%Y-%m-%d %H:%M MST")}')
+    file_size = os.path.getsize('index.html')
+    print(f'Dashboard updated successfully ({file_size} bytes) at {datetime.now(MST).strftime("%Y-%m-%d %H:%M MST")}')
 
 
 if __name__ == '__main__':
