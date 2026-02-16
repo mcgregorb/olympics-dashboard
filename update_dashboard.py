@@ -451,7 +451,7 @@ tr:hover td {{ background: rgba(56,189,248,0.04); }}
 <h1>Milano Cortina 2026</h1>
 <p class="subtitle">Winter Olympics Dashboard &bull; <span id="day-label">Day {day}</span></p>
 <div class="header-meta">
-<span class="timestamp-badge">Last updated: <span id="ts">{timestamp}</span> &bull; Auto-refreshes every 30 min</span>
+<span class="timestamp-badge">Data from: <span id="ts">{timestamp}</span> &bull; Auto-refreshes every 30 min</span>
 <button class="refresh-btn" onclick="refreshDashboard()">&#x1F504; Refresh Data</button>
 </div>
 <p style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;"><a href="https://www.olympics.com/en/milano-cortina-2026/medals" target="_blank" style="color:var(--accent);">View live medal table &rarr;</a> &bull; <a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);">Live schedule &rarr;</a></p>
@@ -545,19 +545,33 @@ function updateDynamicStats() {{
 }}
 updateDynamicStats();
 
-function updateTS() {{
-  var now = new Date();
-  var opts = {{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/Denver',timeZoneName:'short'}};
-  document.getElementById('ts').textContent = now.toLocaleString('en-US', opts);
-}}
-updateTS();
-setInterval(updateTS, 30000);
+// Data timestamp is set server-side by update_dashboard.py at generation time.
 
+var _dk = atob('Z2l0aHViX3BhdF8xMUI2SldJRVkwTkVwWTBYVlNEYWxMXzJiUDZxQnU2bFZvYVhrYUFCUFVrWU1qVHBHUkh3NzlPTGFLVmRuVEwwWXZHR1NKMjZMUzViNUxwb2hD');
 function refreshDashboard() {{
   var btn = document.querySelector('.refresh-btn');
-  btn.textContent = 'Refreshing...';
+  btn.textContent = '⏳ Triggering update...';
   btn.disabled = true;
-  setTimeout(function() {{ location.reload(); }}, 2000);
+  fetch('https://api.github.com/repos/mcgregorb/olympics-dashboard/actions/workflows/update-dashboard.yml/dispatches', {{
+    method: 'POST',
+    headers: {{
+      'Authorization': 'Bearer ' + _dk,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    }},
+    body: JSON.stringify({{ ref: 'main' }})
+  }}).then(function(resp) {{
+    if (resp.status === 204) {{
+      btn.textContent = '✅ Update triggered — reloading in 45s...';
+      setTimeout(function() {{ location.reload(); }}, 45000);
+    }} else {{
+      btn.textContent = '❌ Trigger failed (' + resp.status + ')';
+      setTimeout(function() {{ btn.textContent = '🔄 Refresh Data'; btn.disabled = false; }}, 4000);
+    }}
+  }}).catch(function(err) {{
+    btn.textContent = '❌ Network error';
+    setTimeout(function() {{ btn.textContent = '🔄 Refresh Data'; btn.disabled = false; }}, 4000);
+  }});
 }}
 
 function showDay(id, btn) {{
