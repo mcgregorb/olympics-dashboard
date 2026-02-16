@@ -202,7 +202,7 @@ def build_headlines(headlines):
         url = html_escape(h.get('url', '#'))
         src = html_escape(h.get('source', ''))
         date = html_escape(h.get('date', ''))
-        rows += f'<div class="headline-item"><span class="hl-num">{i}</span><div><div class="hl-text"><a href="{url}" target="_blank">{html_escape(h["title"])}</a></div><div class="hl-src">{src} <span class="hl-date">{date}</span></div></div></div>\n'
+        rows += f'<div class="headline-item">><span class="hl-num">{i}</span><div><div class="hl-text"><a href="{url}" target="_blank">{html_escape(h["title"])}</a></div><div class="hl-src">{src} <span class="hl-date">{date}</span></div></div></div>\n'
     return rows
 
 
@@ -580,31 +580,15 @@ updateDynamicStats();
 
 // Data timestamp is set server-side by update_dashboard.py at generation time.
 
-var _dk = atob('Z2l0aHViX3BhdF8xMUI2SldJRVkwTkVwWTBYVlNEYWxMXzJiUDZxQnU2bFZvYVhrYUFCUFVrWU1qVHBHUkh3NzlPTGFLVmRuVEwwWXZHR1NKMjZMUzViNUxwb2hD');
 function refreshDashboard() {{
   var btn = document.querySelector('.refresh-btn');
-  btn.textContent = '⏳ Triggering update...';
+  btn.textContent = '⏳ Refreshing...';
   btn.disabled = true;
-  fetch('https://api.github.com/repos/mcgregorb/olympics-dashboard/actions/workflows/update-dashboard.yml/dispatches', {{
-    method: 'POST',
-    headers: {{
-      'Authorization': 'Bearer ' + _dk,
-      'Accept': 'application/vnd.github+json',
-      'Content-Type': 'application/json'
-    }},
-    body: JSON.stringify({{ ref: 'main' }})
-  }}).then(function(resp) {{
-    if (resp.status === 204) {{
-      btn.textContent = '✅ Update triggered — reloading in 45s...';
-      setTimeout(function() {{ location.reload(); }}, 45000);
-    }} else {{
-      btn.textContent = '❌ Trigger failed (' + resp.status + ')';
-      setTimeout(function() {{ btn.textContent = '🔄 Refresh Data'; btn.disabled = false; }}, 4000);
-    }}
-  }}).catch(function(err) {{
-    btn.textContent = '❌ Network error';
-    setTimeout(function() {{ btn.textContent = '🔄 Refresh Data'; btn.disabled = false; }}, 4000);
-  }});
+  // Hard reload to bypass browser cache and get latest GitHub Pages deployment
+  // Data auto-updates every 30 min via GitHub Actions cron
+  setTimeout(function() {{
+    location.href = location.href.split('?')[0] + '?t=' + Date.now();
+  }}, 500);
 }}
 
 function showDay(id, btn) {{
@@ -670,7 +654,7 @@ function showNotif(n) {{
   var today = new Date().toISOString().slice(0, 10);
   if (today !== DASHBOARD_DATA_DATE) {{
     setTimeout(function() {{
-      showNotif({{type: 'notif-info', title: 'Dashboard data from ' + DASHBOARD_DATA_DATE, body: 'Hit Refresh Data or wait for the next auto-update.'}});
+      showNotif({{type: 'notif-info', title: 'Dashboard data from ' + DASHBOARD_DATA_DATE, body: 'Data auto-updates every 30 min. Click Refresh Data to get the latest version.'}});
     }}, 3000);
     return;
   }}
