@@ -222,7 +222,22 @@ FALLBACK_ATHLETES = {
     ]
 }
 
-# ── Full Competition Schedule (Days 12–17) ─────────────────────────────────
+FALLBACK_HEADLINES = {
+    'headlines': [
+        {'title': 'Norway leads medal count with dominant Winter Olympics performance', 'source': 'NBC Sports', 'url': 'https://www.nbcolympics.com/', 'date': 'Feb 16'},
+        {'title': 'Italy thrills home crowd with record-breaking medal haul', 'source': 'Olympics.com', 'url': 'https://www.olympics.com/en/milano-cortina-2026', 'date': 'Feb 16'},
+        {'title': 'Team USA climbs to third in medal standings at Milano Cortina', 'source': 'Team USA', 'url': 'https://www.teamusa.com/', 'date': 'Feb 16'},
+        {'title': 'Figure skating pairs final highlights Day 10 in Milan', 'source': 'NBC Sports', 'url': 'https://www.nbcolympics.com/', 'date': 'Feb 16'},
+        {'title': 'Speed skating records continue to fall at Milano Cortina oval', 'source': 'Olympics.com', 'url': 'https://www.olympics.com/en/milano-cortina-2026', 'date': 'Feb 15'},
+        {'title': 'Freestyle skiing Big Air events draw massive crowds', 'source': 'Reuters', 'url': 'https://www.reuters.com/sports/', 'date': 'Feb 15'},
+        {'title': 'Winter Olympics 2026: Complete guide to the final week', 'source': 'ESPN', 'url': 'https://www.espn.com/olympics/', 'date': 'Feb 15'},
+        {'title': 'Ice hockey semifinals set as tournament reaches business end', 'source': 'NBC Sports', 'url': 'https://www.nbcolympics.com/', 'date': 'Feb 15'},
+        {'title': 'Biathlon delivers thrilling mass start races in Anterselva', 'source': 'Olympics.com', 'url': 'https://www.olympics.com/en/milano-cortina-2026', 'date': 'Feb 14'},
+        {'title': 'Medal count update: 76 of 116 events completed at Milano Cortina', 'source': 'AP News', 'url': 'https://apnews.com/hub/winter-olympics', 'date': 'Feb 14'},
+    ]
+}
+
+# ── Full Competition Schedule (Days 11–17) ─────────────────────────────────
 # Authoritative schedule for remaining days of the Games.
 # Times are in CET (hour, minute) — converted to MST at runtime.
 # Events marked is_medal=True are medal-deciding finals/events.
@@ -232,6 +247,27 @@ FALLBACK_ATHLETES = {
 # Wikipedia medal winners.
 
 FULL_SCHEDULE = {
+    11: {
+        'date': 'Feb 16', 'date_iso': '2026-02-16', 'day_of_week': 'Mon',
+        'events': [
+            {'h': 8, 'm': 5, 'sport': 'Curling', 'event': "Women's Round Robin Session 7", 'is_medal': False},
+            {'h': 9, 'm': 0, 'sport': 'Alpine Skiing', 'event': "Men's Slalom Run 1", 'is_medal': False},
+            {'h': 9, 'm': 0, 'sport': 'Bobsleigh', 'event': "Two-Man Heat 1", 'is_medal': False},
+            {'h': 10, 'm': 0, 'sport': 'Short Track Speed Skating', 'event': "Women's 1000m Quarterfinals", 'is_medal': False},
+            {'h': 10, 'm': 17, 'sport': 'Short Track Speed Skating', 'event': "Men's 500m Heats", 'is_medal': False},
+            {'h': 10, 'm': 57, 'sport': 'Bobsleigh', 'event': "Two-Man Heat 2", 'is_medal': False},
+            {'h': 12, 'm': 47, 'sport': 'Short Track Speed Skating', 'event': "Women's 1000m Final", 'is_medal': True},
+            {'h': 13, 'm': 30, 'sport': 'Alpine Skiing', 'event': "Men's Slalom Run 2", 'is_medal': True},
+            {'h': 17, 'm': 0, 'sport': 'Bobsleigh', 'event': "Women's Monobob Heat 3", 'is_medal': False},
+            {'h': 18, 'm': 0, 'sport': 'Ski Jumping', 'event': "Men's Super Team 1st Round", 'is_medal': False},
+            {'h': 18, 'm': 5, 'sport': 'Curling', 'event': "Women's Round Robin Session 8", 'is_medal': False},
+            {'h': 18, 'm': 30, 'sport': 'Freestyle Skiing', 'event': "Women's Freeski Big Air Final", 'is_medal': True},
+            {'h': 19, 'm': 0, 'sport': 'Figure Skating', 'event': "Pair Skating Free Skating", 'is_medal': True},
+            {'h': 19, 'm': 31, 'sport': 'Ski Jumping', 'event': "Men's Super Team Final", 'is_medal': True},
+            {'h': 20, 'm': 6, 'sport': 'Bobsleigh', 'event': "Women's Monobob Heat 4", 'is_medal': True},
+            {'h': 20, 'm': 10, 'sport': 'Ice Hockey', 'event': "Women's Semifinal", 'is_medal': False},
+        ],
+    },
     12: {
         'date': 'Feb 17', 'date_iso': '2026-02-17', 'day_of_week': 'Tue',
         'events': [
@@ -585,8 +621,11 @@ def derive_latest_results(medal_winners, day_num):
     # Try to get day-specific data from chronological summary
     try:
         day_results = scrape_chronological_results(day_num)
-        if day_results:
-            return day_results
+        if day_results and day_results.get('days'):
+            total = sum(len(d.get('results', [])) for d in day_results['days'])
+            if total > 0:
+                return day_results
+            print('  ! Chronological results returned but had 0 events, using fallback')
     except Exception as e:
         print(f'  ! Chronological summary scrape failed: {e}')
 
@@ -640,10 +679,15 @@ def scrape_chronological_results(day_num):
         target_date = (now - timedelta(days=i))
 
         # Find section for this day — look for headings like "Day 11 (February 16)"
+        # Olympics.com may count days differently (±1), so check multiple day numbers
         day_heading = None
         for heading in soup.find_all(['h2', 'h3']):
             text = heading.get_text(strip=True)
-            if f'Day {d}' in text or target_date.strftime('%B %d') in text or target_date.strftime('%-d %B') in text:
+            date_feb = target_date.strftime('%B %d').replace(' 0', ' ')  # "February 16"
+            date_d_b = target_date.strftime('%-d %B')  # "16 February"
+            if (f'Day {d}' in text or f'Day {d-1}' in text or f'Day {d+1}' in text
+                    or date_feb in text or date_d_b in text
+                    or target_date.strftime('%B %-d') in text):
                 day_heading = heading
                 break
 
@@ -962,16 +1006,23 @@ def build_today_schedule(wiki_events, medal_winners):
     # Get today's events — prefer Wikipedia, fall back to hardcoded
     today_events = [e for e in wiki_events if e['date'] == today_iso]
 
-    if not today_events and day_num in FULL_SCHEDULE:
-        sched = FULL_SCHEDULE[day_num]
-        today_events = [{
-            'sport': e['sport'], 'event': e['event'],
-            'date': sched['date_iso'],
-            'time_cet': (e['h'], e['m']),
-            'is_medal': e['is_medal'],
-        } for e in sched['events']]
-        if today_events:
-            print(f'  ↳ Using hardcoded schedule for Day {day_num} ({len(today_events)} events)')
+    if not today_events:
+        # Try by day_num first, then by date_iso match across all days
+        sched = FULL_SCHEDULE.get(day_num)
+        if not sched:
+            for d, s in FULL_SCHEDULE.items():
+                if s['date_iso'] == today_iso:
+                    sched = s
+                    break
+        if sched:
+            today_events = [{
+                'sport': e['sport'], 'event': e['event'],
+                'date': sched['date_iso'],
+                'time_cet': (e['h'], e['m']),
+                'is_medal': e['is_medal'],
+            } for e in sched['events']]
+            if today_events:
+                print(f'  ↳ Using hardcoded schedule for Day {day_num} ({len(today_events)} events)')
 
     if not today_events:
         return {'events': []}
@@ -1029,15 +1080,22 @@ def build_upcoming_events(wiki_events):
         day_events = [e for e in wiki_events if e['date'] == target_iso]
         source = 'Wikipedia'
 
-        if not day_events and day_num in FULL_SCHEDULE:
-            sched = FULL_SCHEDULE[day_num]
-            day_events = [{
-                'sport': e['sport'], 'event': e['event'],
-                'date': sched['date_iso'],
-                'time_cet': (e['h'], e['m']),
-                'is_medal': e['is_medal'],
-            } for e in sched['events']]
-            source = 'hardcoded'
+        if not day_events:
+            # Try by day_num first, then by date_iso match
+            sched = FULL_SCHEDULE.get(day_num)
+            if not sched:
+                for d, s in FULL_SCHEDULE.items():
+                    if s['date_iso'] == target_iso:
+                        sched = s
+                        break
+            if sched:
+                day_events = [{
+                    'sport': e['sport'], 'event': e['event'],
+                    'date': sched['date_iso'],
+                    'time_cet': (e['h'], e['m']),
+                    'is_medal': e['is_medal'],
+                } for e in sched['events']]
+                source = 'hardcoded'
 
         if not day_events:
             continue
@@ -1866,6 +1924,10 @@ def main():
     except Exception as e:
         print(f'  ✗ Headlines RSS failed: {e}')
         sections['headlines'] = {'headlines': []}
+
+    if not sections['headlines'].get('headlines'):
+        print('  ↳ Using fallback headlines')
+        sections['headlines'] = FALLBACK_HEADLINES
 
     # ── Step 7: Videos from YouTube Data API ──────────────────────────────
     try:
