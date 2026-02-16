@@ -23,14 +23,50 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
+      - name: Show current state
+        run: |
+          echo "=== Current time (UTC) ==="
+          date -u
+          echo "=== Files in repo root ==="
+          ls -la
+          echo "=== First 5 lines of update_dashboard.py ==="
+          head -5 update_dashboard.py
+          echo "=== Current index.html size ==="
+          wc -c index.html
+          echo "=== Schedule header in current index.html ==="
+          grep -o 'Schedule.*MST\|Today.*Schedule[^<]*' index.html | head -3 || echo "No schedule header found"
+          echo "=== Data from timestamp ==="
+          grep -o 'Data from:[^<]*' index.html | head -1 || echo "No timestamp found"
+
       - name: Run update script
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
-        run: python update_dashboard.py
+        run: |
+          echo "=== Running update_dashboard.py ==="
+          python update_dashboard.py 2>&1
+          echo ""
+          echo "=== Exit code: $? ==="
+          echo "=== New index.html size ==="
+          wc -c index.html
+          echo "=== New schedule header ==="
+          grep -o 'Day [0-9]* Schedule' index.html | head -1 || echo "No Day X Schedule found"
+          echo "=== New timestamp ==="
+          grep -o 'Data from:[^<]*' index.html | head -1 || echo "No timestamp found"
+          echo "=== DASHBOARD_DATA_DATE ==="
+          grep -o "DASHBOARD_DATA_DATE = '[^']*'" index.html | head -1 || echo "Not found"
 
       - name: Commit and push changes
         run: |
           git config user.name 'GitHub Actions Bot'
           git config user.email 'actions@github.com'
           git add index.html
-          git diff --staged --quiet || (git commit -m "Auto-update dashboard $(date -u +'%Y-%m-%d %H:%M UTC')" && git push)
+          echo "=== Git diff stats ==="
+          git diff --staged --stat || echo "No staged changes"
+          if git diff --staged --quiet; then
+            echo "⚠️ NO CHANGES detected in index.html — nothing to commit"
+          else
+            echo "✅ Changes detected — committing"
+            git commit -m "Auto-update dashboard $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+            echo "✅ Pushed successfully"
+          fi
