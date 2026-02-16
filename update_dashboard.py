@@ -1,18 +1,20 @@
 """
 Olympics Dashboard Auto-Updater
 ===============================
-Called by GitHub Actions every 30 minutes. Uses Perplexity Sonar API to fetch
-live Olympics data, then regenerates the full index.html from a template approach.
+Called by GitHub Actions every 30 minutes. Uses a hybrid data approach:
+  - Wikipedia API for medal table (reliable, structured HTML)
+  - Perplexity Sonar API for dynamic content (schedule, headlines, videos)
+  - Hardcoded data for athletes and as last-resort fallbacks
 
 Sections updated:
-  1. Medal count table (top 15 countries, sorted by gold)
-  2. Today's schedule with results
-  3. USA medal breakdown by sport
-  4. Latest medal results (day tabs for last 3 days)
-  5. Headlines (top 10)
-  6. Video highlights (10 cards)
-  7. USA athlete spotlights
-  8. Upcoming events with individual reminder buttons
+  1. Medal count table (top 15 countries, sorted by gold) — Wikipedia
+  2. Today's schedule with results — Perplexity
+  3. USA medal breakdown by sport — Hardcoded + Perplexity
+  4. Latest medal results (day tabs for last 3 days) — Perplexity
+  5. Headlines (top 10) — Perplexity
+  6. YouTube video highlights (10 cards) — Perplexity
+  7. USA athlete spotlights — Hardcoded (authoritative)
+  8. Upcoming events with individual reminder buttons — Perplexity
   9. Stats row (events today, events completed, days remaining)
   10. Notifications (date-aware, keyed to DASHBOARD_DATA_DATE)
 """
@@ -26,10 +28,195 @@ from datetime import datetime, timezone, timedelta
 
 API_KEY = os.environ.get('PERPLEXITY_API_KEY')
 API_URL = 'https://api.perplexity.ai/chat/completions'
+WIKI_API = 'https://en.wikipedia.org/w/api.php'
 MST = timezone(timedelta(hours=-7))
 GAMES_START = datetime(2026, 2, 6, tzinfo=MST)
 GAMES_END = datetime(2026, 2, 22, 23, 59, 59, tzinfo=MST)
 
+# Country code to flag emoji mapping
+COUNTRY_FLAGS = {
+    'Norway': '\U0001f1f3\U0001f1f4', 'Italy': '\U0001f1ee\U0001f1f9',
+    'United States': '\U0001f1fa\U0001f1f8', 'Netherlands': '\U0001f1f3\U0001f1f1',
+    'Sweden': '\U0001f1f8\U0001f1ea', 'France': '\U0001f1eb\U0001f1f7',
+    'Germany': '\U0001f1e9\U0001f1ea', 'Austria': '\U0001f1e6\U0001f1f9',
+    'Switzerland': '\U0001f1e8\U0001f1ed', 'Japan': '\U0001f1ef\U0001f1f5',
+    'Australia': '\U0001f1e6\U0001f1fa', 'Great Britain': '\U0001f1ec\U0001f1e7',
+    'Czechia': '\U0001f1e8\U0001f1ff', 'Czech Republic': '\U0001f1e8\U0001f1ff',
+    'Slovenia': '\U0001f1f8\U0001f1ee', 'Canada': '\U0001f1e8\U0001f1e6',
+    'South Korea': '\U0001f1f0\U0001f1f7', 'Brazil': '\U0001f1e7\U0001f1f7',
+    'Kazakhstan': '\U0001f1f0\U0001f1ff', 'Finland': '\U0001f1eb\U0001f1ee',
+    'China': '\U0001f1e8\U0001f1f3', 'New Zealand': '\U0001f1f3\U0001f1ff',
+    'Poland': '\U0001f1f5\U0001f1f1', 'Estonia': '\U0001f1ea\U0001f1ea',
+    'Belgium': '\U0001f1e7\U0001f1ea', 'Spain': '\U0001f1ea\U0001f1f8',
+    'Latvia': '\U0001f1f1\U0001f1fb', 'Croatia': '\U0001f1ed\U0001f1f7',
+    'Slovakia': '\U0001f1f8\U0001f1f0', 'Bulgaria': '\U0001f1e7\U0001f1ec',
+    'ROC': '\U0001f3f3\ufe0f', 'OAR': '\U0001f3f3\ufe0f',
+}
+
+COUNTRY_CODES = {
+    'Norway': 'NOR', 'Italy': 'ITA', 'United States': 'USA', 'United States of America': 'USA',
+    'Netherlands': 'NED', 'Sweden': 'SWE', 'France': 'FRA', 'Germany': 'GER',
+    'Austria': 'AUT', 'Switzerland': 'SUI', 'Japan': 'JPN', 'Australia': 'AUS',
+    'Great Britain': 'GBR', 'Czechia': 'CZE', 'Czech Republic': 'CZE',
+    'Slovenia': 'SLO', 'Canada': 'CAN', 'South Korea': 'KOR', 'Brazil': 'BRA',
+    'Kazakhstan': 'KAZ', 'Finland': 'FIN', 'China': 'CHN', 'New Zealand': 'NZL',
+    'Poland': 'POL', 'Estonia': 'EST', 'Belgium': 'BEL', 'Spain': 'ESP',
+    'Latvia': 'LAT', 'Croatia': 'CRO', 'Slovakia': 'SVK', 'Bulgaria': 'BUL',
+}
+
+
+# ── Hardcoded Authoritative Data (updated Feb 16, Day 11) ─────────────────
+# Used as reliable fallbacks when scrapers and API return empty/sparse data.
+# Source: olympics.com medal table, verified Feb 16 2026
+
+FALLBACK_MEDALS = {
+    'medals': [
+        {'rank': 1, 'country': 'Norway', 'flag': '\U0001f1f3\U0001f1f4', 'code': 'NOR', 'gold': 12, 'silver': 7, 'bronze': 7, 'total': 26},
+        {'rank': 2, 'country': 'Italy', 'flag': '\U0001f1ee\U0001f1f9', 'code': 'ITA', 'gold': 8, 'silver': 4, 'bronze': 10, 'total': 22},
+        {'rank': 3, 'country': 'United States', 'flag': '\U0001f1fa\U0001f1f8', 'code': 'USA', 'gold': 5, 'silver': 8, 'bronze': 4, 'total': 17},
+        {'rank': 4, 'country': 'Netherlands', 'flag': '\U0001f1f3\U0001f1f1', 'code': 'NED', 'gold': 5, 'silver': 5, 'bronze': 1, 'total': 11},
+        {'rank': 5, 'country': 'Sweden', 'flag': '\U0001f1f8\U0001f1ea', 'code': 'SWE', 'gold': 5, 'silver': 5, 'bronze': 1, 'total': 11},
+        {'rank': 6, 'country': 'France', 'flag': '\U0001f1eb\U0001f1f7', 'code': 'FRA', 'gold': 4, 'silver': 7, 'bronze': 4, 'total': 15},
+        {'rank': 7, 'country': 'Germany', 'flag': '\U0001f1e9\U0001f1ea', 'code': 'GER', 'gold': 4, 'silver': 6, 'bronze': 5, 'total': 15},
+        {'rank': 8, 'country': 'Austria', 'flag': '\U0001f1e6\U0001f1f9', 'code': 'AUT', 'gold': 4, 'silver': 6, 'bronze': 3, 'total': 13},
+        {'rank': 9, 'country': 'Switzerland', 'flag': '\U0001f1e8\U0001f1ed', 'code': 'SUI', 'gold': 4, 'silver': 2, 'bronze': 3, 'total': 9},
+        {'rank': 10, 'country': 'Japan', 'flag': '\U0001f1ef\U0001f1f5', 'code': 'JPN', 'gold': 3, 'silver': 5, 'bronze': 9, 'total': 17},
+        {'rank': 11, 'country': 'Australia', 'flag': '\U0001f1e6\U0001f1fa', 'code': 'AUS', 'gold': 3, 'silver': 1, 'bronze': 1, 'total': 5},
+        {'rank': 12, 'country': 'Great Britain', 'flag': '\U0001f1ec\U0001f1e7', 'code': 'GBR', 'gold': 3, 'silver': 0, 'bronze': 0, 'total': 3},
+        {'rank': 13, 'country': 'Czechia', 'flag': '\U0001f1e8\U0001f1ff', 'code': 'CZE', 'gold': 2, 'silver': 2, 'bronze': 0, 'total': 4},
+        {'rank': 14, 'country': 'Slovenia', 'flag': '\U0001f1f8\U0001f1ee', 'code': 'SLO', 'gold': 2, 'silver': 1, 'bronze': 1, 'total': 4},
+        {'rank': 15, 'country': 'Canada', 'flag': '\U0001f1e8\U0001f1e6', 'code': 'CAN', 'gold': 1, 'silver': 3, 'bronze': 5, 'total': 9},
+    ],
+    'day': 11, 'events_complete': 76, 'total_events': 116,
+    'medal_events_today': 8, 'countries_with_medals': 26
+}
+
+FALLBACK_USA = {
+    'sports': [
+        {'sport': 'Speed Skating', 'gold': 2, 'silver': 0, 'bronze': 0},
+        {'sport': 'Alpine Skiing', 'gold': 1, 'silver': 0, 'bronze': 1},
+        {'sport': 'Figure Skating', 'gold': 1, 'silver': 1, 'bronze': 0},
+        {'sport': 'Freestyle Skiing (Moguls)', 'gold': 1, 'silver': 2, 'bronze': 1},
+        {'sport': 'Snowboard', 'gold': 0, 'silver': 1, 'bronze': 0},
+        {'sport': 'Cross-Country Skiing', 'gold': 0, 'silver': 1, 'bronze': 1},
+        {'sport': 'Freestyle Skiing (Slopestyle)', 'gold': 0, 'silver': 1, 'bronze': 0},
+        {'sport': 'Alpine Skiing (Team)', 'gold': 0, 'silver': 0, 'bronze': 1},
+    ],
+    'total_gold': 5, 'total_silver': 8, 'total_bronze': 4, 'total': 17
+}
+
+FALLBACK_ATHLETES = {
+    'athletes': [
+        {'name': 'Jordan Stolz', 'sport': 'Speed Skating', 'medals': [{'event': '1000m', 'type': 'gold', 'emoji': '\U0001f947'}, {'event': '500m', 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': 'Won two gold medals with Olympic records in both the 1000m and 500m. First American since 1980 to win multiple speedskating golds at a single Olympics.'},
+        {'name': 'Breezy Johnson', 'sport': 'Alpine Skiing', 'medals': [{'event': "Women's Downhill", 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': "Won gold in the women's downhill, becoming only the second American woman to accomplish the feat. First gold medal for Team USA at these Games."},
+        {'name': 'Elizabeth Lemley', 'sport': 'Freestyle Skiing', 'medals': [{'event': "Women's Moguls", 'type': 'gold', 'emoji': '\U0001f947'}, {'event': "Women's Dual Moguls", 'type': 'bronze', 'emoji': '\U0001f949'}], 'bio': "Won gold in her Olympic debut in women's moguls at just 20 years old, then added a bronze in dual moguls."},
+        {'name': 'Ilia Malinin', 'sport': 'Figure Skating', 'medals': [{'event': 'Team Event', 'type': 'gold', 'emoji': '\U0001f947'}], 'bio': 'Known as the "Quad God," delivered a dominant performance helping Team USA win gold in the figure skating team event.'},
+        {'name': 'Ben Ogden', 'sport': 'Cross-Country Skiing', 'medals': [{'event': 'Sprint', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Became the first American man to win an Olympic medal in cross-country skiing since 1976, earning silver in the sprint.'},
+        {'name': 'Chloe Kim', 'sport': 'Snowboard Halfpipe', 'medals': [{'event': 'Halfpipe', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Two-time Olympic champion earned silver in the halfpipe, adding to her legendary Olympic career.'},
+        {'name': 'Chock & Bates', 'sport': 'Ice Dance', 'medals': [{'event': 'Ice Dance', 'type': 'silver', 'emoji': '\U0001f948'}], 'bio': 'Madison Chock and Evan Bates earned silver in ice dance after being narrowly edged out of the top spot.'},
+        {'name': 'Jessie Diggins', 'sport': 'Cross-Country Skiing', 'medals': [{'event': 'Individual', 'type': 'bronze', 'emoji': '\U0001f949'}], 'bio': 'Continued her Olympic legacy with a bronze medal, further cementing her status as the greatest American cross-country skier.'},
+    ]
+}
+
+
+# ── Wikipedia Scraper ─────────────────────────────────────────────────────
+
+def scrape_medal_table():
+    """Fetch medal table from Wikipedia API. Returns parsed data dict."""
+    import requests
+    params = {
+        'action': 'parse',
+        'page': '2026 Winter Olympics medal table',
+        'format': 'json',
+        'prop': 'text',
+        'section': 1,  # Usually the medal table section
+    }
+    resp = requests.get(WIKI_API, params=params, timeout=30,
+                        headers={'User-Agent': 'OlympicsDashboard/1.0'})
+    resp.raise_for_status()
+    html = resp.json().get('parse', {}).get('text', {}).get('*', '')
+
+    if not html:
+        raise ValueError('Empty Wikipedia response')
+
+    # Parse the wikitable HTML for medal data
+    # Rows look like: <td>1</td><td>...<a ...>Norway</a>...</td><td>12</td><td>7</td><td>7</td><td>26</td>
+    medals = []
+    # Find table rows (skip header rows with <th>)
+    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+
+    for row in rows:
+        # Skip header rows
+        if '<th' in row and '<td' not in row:
+            continue
+        # Extract all cell values
+        cells = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', row, re.DOTALL)
+        if len(cells) < 5:
+            continue
+
+        # Clean HTML tags from cells
+        clean = [re.sub(r'<[^>]+>', '', c).strip() for c in cells]
+
+        # Try to find country name (longest text cell) and numbers
+        # Typical format: rank, country, gold, silver, bronze, total
+        # But Wikipedia may have extra columns
+        country = None
+        numbers = []
+        for c in clean:
+            # Check if it's a number
+            if re.match(r'^\d+$', c):
+                numbers.append(int(c))
+            elif len(c) > 2 and not re.match(r'^\d', c) and c != '*':
+                country = c
+
+        if country and len(numbers) >= 4:
+            # Last 4 numbers are typically: gold, silver, bronze, total
+            # But there might be a rank number first
+            g, s, b, t = numbers[-4], numbers[-3], numbers[-2], numbers[-1]
+            rank = len(medals) + 1
+
+            # Normalize country name
+            name = country.replace('\xa0', ' ').strip()
+            # Remove footnote markers like [a] or *
+            name = re.sub(r'\s*\[.*?\]', '', name).strip()
+            name = re.sub(r'\s*\*$', '', name).strip()
+
+            flag = COUNTRY_FLAGS.get(name, '')
+            code = COUNTRY_CODES.get(name, name[:3].upper())
+
+            medals.append({
+                'rank': rank,
+                'country': name,
+                'flag': flag,
+                'code': code,
+                'gold': g,
+                'silver': s,
+                'bronze': b,
+                'total': t,
+            })
+
+    if not medals:
+        raise ValueError('Could not parse any medal data from Wikipedia')
+
+    # Compute stats
+    total_medals_awarded = sum(m['total'] for m in medals)
+    # Rough estimate: ~7 medals per event day, 116 total events
+    now = datetime.now(MST)
+    day_num = max(1, (now - GAMES_START).days + 1)
+
+    result = {
+        'medals': medals[:15],  # Top 15
+        'day': day_num,
+        'events_complete': total_medals_awarded // 3 if total_medals_awarded > 0 else 0,
+        'total_events': 116,
+        'medal_events_today': 8,  # Will be updated by schedule data
+        'countries_with_medals': len(medals),
+    }
+    print(f'  \u2713 Wikipedia: parsed {len(medals)} countries, {total_medals_awarded} total medals')
+    return result
+
+
+# ── Perplexity API ────────────────────────────────────────────────────────
 
 def query_perplexity(prompt, max_tokens=4000):
     """Call Perplexity Sonar API and return parsed JSON."""
@@ -67,22 +254,27 @@ def _today_str():
 
 
 def get_medal_table():
-    today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the current 2026 Milano Cortina Winter Olympics medal count as of today for the top 15 countries sorted by gold medals (then silver as tiebreaker). Include the current Games day number, events completed so far, and today's medal event count.
+    """Primary: Wikipedia scrape. Fallback: Perplexity API."""
+    try:
+        return scrape_medal_table()
+    except Exception as e:
+        print(f'  ! Wikipedia scrape failed: {e}, trying Perplexity...')
+        today = _today_str()
+        return query_perplexity(f"""Today is {today}. Get the current 2026 Milano Cortina Winter Olympics medal count as of today for the top 15 countries sorted by gold medals (then silver as tiebreaker). Include the current Games day number, events completed so far, and today's medal event count.
 Return JSON:
-{{"medals": [{{"rank": 1, "country": "Norway", "flag": "🇳🇴", "code": "NOR", "gold": 0, "silver": 0, "bronze": 0, "total": 0}}], "day": 10, "events_complete": 51, "medal_events_today": 7, "total_events": 116, "countries_with_medals": 26}}""")
+{{"medals": [{{"rank": 1, "country": "Norway", "flag": "\U0001f1f3\U0001f1f4", "code": "NOR", "gold": 0, "silver": 0, "bronze": 0, "total": 0}}], "day": 10, "events_complete": 51, "medal_events_today": 7, "total_events": 116, "countries_with_medals": 26}}""")
 
 
 def get_today_schedule():
     today = _today_str()
     return query_perplexity(f"""Today is {today}. Get today's full 2026 Winter Olympics schedule and results (all events, not just medal events). Times should be in MST (Mountain Standard Time, UTC-7). For completed events include the medal winners.
 Return JSON:
-{{"events": [{{"time_mst": "3:00 AM", "event": "Event name", "sport": "Sport", "status": "done|live|upcoming", "is_medal": true, "result": "🥇 Winner (COUNTRY) • 🥈 Second • 🥉 Third"}}]}}""")
+{{"events": [{{"time_mst": "3:00 AM", "event": "Event name", "sport": "Sport", "status": "done|live|upcoming", "is_medal": true, "result": "\U0001f947 Winner (COUNTRY) \u2022 \U0001f948 Second \u2022 \U0001f949 Third"}}]}}""")
 
 
 def get_usa_breakdown():
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the current USA (United States) medal breakdown by sport for the 2026 Winter Olympics as of today. List EVERY sport where USA has won at least one medal. Be thorough — include alpine skiing, speed skating, figure skating, freestyle skiing, snowboard, bobsled, skeleton, cross-country, etc.
+    return query_perplexity(f"""Today is {today}. Get the current USA (United States) medal breakdown by sport for the 2026 Winter Olympics as of today. List EVERY sport where USA has won at least one medal. Be thorough.
 Return JSON:
 {{"sports": [{{"sport": "Speed Skating", "gold": 2, "silver": 1, "bronze": 0}}], "total_gold": 4, "total_silver": 7, "total_bronze": 3, "total": 14}}""")
 
@@ -101,23 +293,16 @@ Return JSON:
 
 def get_headlines():
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the top 10 most important headlines from the 2026 Winter Olympics as of today. Include real source URLs from major outlets (NBC, CNN, LA Times, Olympics.com, etc).
+    return query_perplexity(f"""Today is {today}. Get the top 10 most important headlines from the 2026 Winter Olympics as of today. Include real source URLs from major outlets (NBC, CNN, LA Times, Olympics.com, etc). IMPORTANT: For each headline, use the ACTUAL publication date of the article, NOT today's date. Different articles should have different dates.
 Return JSON:
-{{"headlines": [{{"title": "Short headline", "source": "Source Name", "url": "https://...", "date": "{datetime.now(MST).strftime('%b %d')}"}}]}}""")
+{{"headlines": [{{"title": "Short headline", "source": "Source Name", "url": "https://...", "date": "Feb 13"}}]}}""")
 
 
 def get_video_highlights():
     today = _today_str()
-    return query_perplexity(f"""Today is {today}. Find 10 recent video highlight links from the 2026 Winter Olympics. Use real article/video page URLs from NBC Olympics, NBC News, Olympics.com, Today Show, CBS Sports, WGAL, WBAL, ESPN, etc. Include the sport emoji, a short title, and a thumbnail_url (the Open Graph image or article thumbnail URL from the source page).
+    return query_perplexity(f"""Today is {today}. Find 10 recent YouTube video highlights from the 2026 Winter Olympics. ONLY use youtube.com or youtu.be URLs — no other video sources. Include the sport emoji and a short title. Use the ACTUAL upload date of each video, NOT today's date.
 Return JSON:
-{{"videos": [{{"title": "Short title", "url": "https://...", "source": "NBC Olympics", "emoji": "⛸️", "date": "{datetime.now(MST).strftime('%b %d')}", "thumbnail_url": "https://..."}}]}}""")
-
-
-def get_athlete_spotlights():
-    today = _today_str()
-    return query_perplexity(f"""Today is {today}. Get the top 8 USA athlete stories from the 2026 Winter Olympics so far. Include their name, sport, medal won, a 2-3 sentence bio about their performance, and an image_url — use a real publicly accessible headshot/photo URL from Wikipedia, Wikimedia Commons, or Olympics.com. For the image URL, try to find their Wikipedia page image.
-Return JSON:
-{{"athletes": [{{"name": "Chloe Kim", "sport": "Snowboard Halfpipe", "medal": "silver", "medal_emoji": "🥈", "bio": "Two-time Olympic champion...", "image_url": "https://upload.wikimedia.org/wikipedia/commons/..."}}]}}""", max_tokens=5000)
+{{"videos": [{{"title": "Short title", "url": "https://www.youtube.com/watch?v=VIDEO_ID", "source": "NBC Olympics", "emoji": "\u26f8\ufe0f", "date": "Feb 14"}}]}}""")
 
 
 def get_upcoming_events():
@@ -135,6 +320,12 @@ def html_escape(s):
     return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
 
+def _extract_youtube_id(url):
+    """Extract YouTube video ID from various URL formats."""
+    m = re.search(r'(?:v=|youtu\.be/|embed/|shorts/)([a-zA-Z0-9_-]{11})', url or '')
+    return m.group(1) if m else None
+
+
 def build_medal_table_rows(medals):
     rows = ''
     for m in medals.get('medals', []):
@@ -145,8 +336,11 @@ def build_medal_table_rows(medals):
 
 
 def build_schedule_rows(schedule):
+    events = schedule.get('events', [])
+    if not events:
+        return '<div class="section-empty">\u23f3 Schedule data temporarily unavailable. <a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);">View live schedule \u2192</a></div>'
     rows = ''
-    for evt in schedule.get('events', []):
+    for evt in events:
         status = evt.get('status', 'upcoming')
         is_medal = evt.get('is_medal', False)
         classes = ['evt']
@@ -171,8 +365,11 @@ def build_schedule_rows(schedule):
 
 
 def build_usa_breakdown(usa):
+    sports = usa.get('sports', [])
+    if not sports:
+        return '<div class="section-empty">USA breakdown data temporarily unavailable.</div>'
     rows = ''
-    for s in usa.get('sports', []):
+    for s in sports:
         rows += f'<div class="sport-row"><span class="sport-label">{html_escape(s["sport"])}</span><div class="sport-medals"><span class="g">{s["gold"]}</span><span class="s">{s["silver"]}</span><span class="b">{s["bronze"]}</span></div></div>\n'
     return rows
 
@@ -180,7 +377,7 @@ def build_usa_breakdown(usa):
 def build_results_tabs(results):
     days = results.get('days', [])
     if not days:
-        return '<div class="athlete-card"><div class="athlete-bio">No results available yet.</div></div>'
+        return '<div class="section-empty">\U0001f3c5 Results data temporarily unavailable. <a href="https://www.olympics.com/en/milano-cortina-2026/medals" target="_blank" style="color:var(--accent);">View results \u2192</a></div>'
 
     tabs = ''
     contents = ''
@@ -191,15 +388,18 @@ def build_results_tabs(results):
 
         cards = ''
         for r in day.get('results', []):
-            cards += f'<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 {html_escape(r["event"])}</span><span class="athlete-medal-tag g">Day {day["day_num"]}</span></div><div class="athlete-bio">🥇 {html_escape(r["gold"])} • 🥈 {html_escape(r["silver"])} • 🥉 {html_escape(r["bronze"])}</div></div>\n'
+            cards += f'<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">\U0001f947 {html_escape(r["event"])}</span><span class="athlete-medal-tag g">Day {day["day_num"]}</span></div><div class="athlete-bio">\U0001f947 {html_escape(r["gold"])} \u2022 \U0001f948 {html_escape(r["silver"])} \u2022 \U0001f949 {html_escape(r["bronze"])}</div></div>\n'
         contents += f'<div id="{day_id}" class="day-content{active}">\n{cards}</div>\n'
 
     return f'<div class="day-tabs">\n{tabs}</div>\n{contents}'
 
 
 def build_headlines(headlines):
+    items = headlines.get('headlines', [])
+    if not items:
+        return '<div class="section-empty">\U0001f4f0 Headlines temporarily unavailable. <a href="https://www.nbcolympics.com/" target="_blank" style="color:var(--accent);">Visit NBC Olympics \u2192</a></div>'
     rows = ''
-    for i, h in enumerate(headlines.get('headlines', []), 1):
+    for i, h in enumerate(items, 1):
         url = html_escape(h.get('url', '#'))
         src = html_escape(h.get('source', ''))
         date = html_escape(h.get('date', ''))
@@ -210,17 +410,24 @@ def build_headlines(headlines):
 def build_video_cards(videos):
     grads = ['thumb-grad-1','thumb-grad-2','thumb-grad-3','thumb-grad-4','thumb-grad-5',
              'thumb-grad-6','thumb-grad-7','thumb-grad-8','thumb-grad-9','thumb-grad-10']
+    items = videos.get('videos', [])
+    if not items:
+        return '<div class="section-empty">\U0001f3ac Video highlights temporarily unavailable. <a href="https://www.youtube.com/results?search_query=2026+winter+olympics+highlights" target="_blank" style="color:var(--accent);">Search YouTube \u2192</a></div>'
     cards = ''
-    for i, v in enumerate(videos.get('videos', [])):
+    for i, v in enumerate(items):
         grad = grads[i % len(grads)]
-        emoji = v.get('emoji', '🏔️')
+        emoji = v.get('emoji', '\U0001f3d4\ufe0f')
         url = html_escape(v.get('url', '#'))
-        thumb_url = v.get('thumbnail_url', '')
-        if thumb_url:
-            thumb_inner = f'<img src="{html_escape(thumb_url)}" alt="{html_escape(v["title"])}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="thumb-placeholder {grad}" style="display:none;">{emoji}</div>'
+
+        # Auto-generate YouTube thumbnail from video ID
+        yt_id = _extract_youtube_id(v.get('url', ''))
+        if yt_id:
+            thumb_url = f'https://img.youtube.com/vi/{yt_id}/hqdefault.jpg'
+            thumb_inner = f'<img src="{html_escape(thumb_url)}" alt="{html_escape(v["title"])}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';"><div class="thumb-placeholder {grad}" style="display:none;">{emoji}</div>'
         else:
             thumb_inner = f'<div class="thumb-placeholder {grad}">{emoji}</div>'
-        cards += f'''<div class="video-card"><a href="{url}" target="_blank"><div class="vid-thumb">{thumb_inner}<div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">{html_escape(v["title"])}</div><div class="vid-src">{html_escape(v.get("source",""))} • {html_escape(v.get("date",""))}</div></div></a></div>\n'''
+
+        cards += f'''<div class="video-card"><a href="{url}" target="_blank"><div class="vid-thumb">{thumb_inner}<div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">{html_escape(v["title"])}</div><div class="vid-src">{html_escape(v.get("source",""))} \u2022 {html_escape(v.get("date",""))}</div></div></a></div>\n'''
     return cards
 
 
@@ -237,9 +444,6 @@ def build_athlete_spotlights(athletes):
     }
     cards = ''
     for a in athletes.get('athletes', []):
-        medal = a.get('medal', 'gold')
-        color = medal_colors.get(medal, 'g')
-        emoji = a.get('medal_emoji', '🥇')
         name = a.get('name', '')
         sport = a.get('sport', '')
         # Determine avatar class from sport
@@ -251,24 +455,39 @@ def build_athlete_spotlights(athletes):
         # Generate initials
         parts = name.split()
         initials = (parts[0][0] + parts[-1][0]).upper() if len(parts) >= 2 else name[:2].upper()
-        # Optional headshot image URL from Wikimedia Commons
-        img_url = a.get('image_url', '')
-        img_tag = f'<img src="{html_escape(img_url)}" alt="{html_escape(name)}" onerror="this.remove()">' if img_url else ''
-        cards += f'<div class="athlete-card"><div class="athlete-avatar {avatar_cls}">{img_tag}{initials}</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">{html_escape(name)} &bull; {html_escape(sport)}</span><span class="athlete-medal-tag {color}">{emoji} {medal.title()}</span></div><div class="athlete-bio">{html_escape(a["bio"])}</div></div></div>\n'
+        # Build medal tags — support both new multi-medal and old single-medal format
+        medal_tags = ''
+        if 'medals' in a and isinstance(a['medals'], list):
+            for m in a['medals']:
+                mtype = m.get('type', 'gold')
+                color = medal_colors.get(mtype, 'g')
+                emoji = m.get('emoji', '\U0001f947')
+                event = m.get('event', '')
+                medal_tags += f'<span class="athlete-medal-tag {color}">{emoji} {html_escape(event)}</span> '
+        else:
+            # Legacy single-medal format
+            medal = a.get('medal', 'gold')
+            color = medal_colors.get(medal, 'g')
+            emoji = a.get('medal_emoji', '\U0001f947')
+            medal_tags = f'<span class="athlete-medal-tag {color}">{emoji} {medal.title()}</span>'
+        cards += f'<div class="athlete-card"><div class="athlete-avatar {avatar_cls}">{initials}</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">{html_escape(name)} &bull; {html_escape(sport)}</span>{medal_tags}</div><div class="athlete-bio">{html_escape(a.get("bio", ""))}</div></div></div>\n'
     return cards
 
 
 def build_upcoming_section(upcoming):
+    days = upcoming.get('days', [])
+    if not days:
+        return '<div class="section-empty">\U0001f4c6 Upcoming events temporarily unavailable. <a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);">View schedule \u2192</a></div>'
     rows = ''
-    for day in upcoming.get('days', []):
+    for day in days:
         mc = day.get('medal_count', '?')
-        rows += f'<div class="upcoming-day-hdr">📅 Day {day["day_num"]} — {html_escape(day["day_of_week"])}, {html_escape(day["date"])} ({mc} medal events)</div>\n'
+        rows += f'<div class="upcoming-day-hdr">\U0001f4c5 Day {day["day_num"]} \u2014 {html_escape(day["day_of_week"])}, {html_escape(day["date"])} ({mc} medal events)</div>\n'
         for evt in day.get('events', []):
             medal_class = ' medal' if evt.get('is_medal') else ''
-            medal_icon = '🥇' if evt.get('is_medal') else ''
+            medal_icon = '\U0001f947' if evt.get('is_medal') else ''
             iso = html_escape(evt.get('iso_date', ''))
             name_safe = html_escape(evt['event']).replace("'", "\\'")
-            rows += f'<div class="upcoming-evt{medal_class}"><span class="ue-time">{html_escape(evt["time_mst"])}</span><span class="ue-name">{html_escape(evt["event"])}</span><span class="ue-type">{medal_icon}</span><button class="remind-btn" onclick="setReminder(this,\'{name_safe}\',\'{iso}\')">🔔 Remind</button></div>\n'
+            rows += f'<div class="upcoming-evt{medal_class}"><span class="ue-time">{html_escape(evt["time_mst"])}</span><span class="ue-name">{html_escape(evt["event"])}</span><span class="ue-type">{medal_icon}</span><button class="remind-btn" onclick="setReminder(this,\'{name_safe}\',\'{iso}\')">\U0001f514 Remind</button></div>\n'
     return rows
 
 
@@ -297,10 +516,10 @@ def generate_html(medal_data, schedule, usa, results, headlines, videos, athlete
         day = int(raw_day)
     except (TypeError, ValueError):
         day = computed_day
-    events_complete = medal_data.get('events_complete', '?')
-    total_events = medal_data.get('total_events', 116)
-    medal_today = medal_data.get('medal_events_today', '?')
-    countries = medal_data.get('countries_with_medals', '?')
+    events_complete = medal_data.get('events_complete') or FALLBACK_MEDALS['events_complete']
+    total_events = medal_data.get('total_events') or 116
+    medal_today = medal_data.get('medal_events_today') or FALLBACK_MEDALS['medal_events_today']
+    countries = medal_data.get('countries_with_medals') or FALLBACK_MEDALS['countries_with_medals']
     try:
         remaining = max(0, 16 - int(day))
     except (TypeError, ValueError):
@@ -321,8 +540,6 @@ def generate_html(medal_data, schedule, usa, results, headlines, videos, athlete
     upcoming_rows = build_upcoming_section(upcoming)
     notif_js = build_notifications(day, events_complete, total_events)
 
-    # Read the template (index.html) and do section replacements
-    # We use marker comments to find each section
     html = TEMPLATE.format(
         data_date=data_date,
         timestamp=timestamp,
@@ -381,6 +598,7 @@ h1 {{ font-size: 2rem; color: var(--accent); font-weight: 800; }}
 .panel {{ background: var(--bg-card); border: 1px solid var(--bg-muted); border-radius: 10px; padding: 20px; overflow-y: auto; max-height: 600px; }}
 .panel.tall {{ max-height: 800px; }}
 .panel-hdr {{ font-size: 1.15rem; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--bg-muted); display: flex; align-items: center; gap: 8px; }}
+.section-empty {{ padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.88rem; background: var(--bg-surface); border-radius: 8px; border: 1px dashed var(--bg-muted); }}
 table {{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }}
 th {{ background: var(--bg-muted); padding: 8px 10px; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; }}
 td {{ padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); }}
@@ -587,14 +805,10 @@ function updateDynamicStats() {{
 }}
 updateDynamicStats();
 
-// Data timestamp is set server-side by update_dashboard.py at generation time.
-
 function refreshDashboard() {{
   var btn = document.querySelector('.refresh-btn');
-  btn.textContent = '⏳ Refreshing...';
+  btn.textContent = '\u23f3 Refreshing...';
   btn.disabled = true;
-  // Hard reload to bypass browser cache and get latest GitHub Pages deployment
-  // Data auto-updates every 30 min via GitHub Actions cron
   setTimeout(function() {{
     location.href = location.href.split('?')[0] + '?t=' + Date.now();
   }}, 500);
@@ -642,7 +856,7 @@ function setReminder(btn, eventName, isoDate) {{
   }}
   btn.textContent = '\\u2705 Set';
   btn.classList.add('set');
-  showNotif({{type: 'notif-info', title: 'Reminder Set', body: eventName + ' — .ics downloaded, browser alert 15 min before.'}});
+  showNotif({{type: 'notif-info', title: 'Reminder Set', body: eventName + ' \u2014 .ics downloaded, browser alert 15 min before.'}});
 }}
 
 function formatICS(d) {{
@@ -695,18 +909,29 @@ def main():
         'results': (get_latest_results, {'days': []}),
         'headlines': (get_headlines, {'headlines': []}),
         'videos': (get_video_highlights, {'videos': []}),
-        'athletes': (get_athlete_spotlights, {'athletes': []}),
         'upcoming': (get_upcoming_events, {'days': []}),
     }
+
+    # Athletes always use hardcoded authoritative data
+    sections['athletes'] = FALLBACK_ATHLETES
+    print('  \u2713 Using authoritative athlete data')
 
     for name, (fn, fallback) in fetchers.items():
         try:
             sections[name] = fn()
-            print(f'  ✓ Got {name}')
+            print(f'  \u2713 Got {name}')
         except Exception as e:
-            print(f'  ✗ {name} failed: {e}')
+            print(f'  \u2717 {name} failed: {e}')
             traceback.print_exc()
             sections[name] = fallback
+
+    # Smart fallback: use hardcoded data when sources returned empty/sparse results
+    if not sections['medals'].get('medals'):
+        print('  \u21b3 Using fallback medal data')
+        sections['medals'] = FALLBACK_MEDALS
+    if not sections['usa'].get('sports'):
+        print('  \u21b3 Using fallback USA breakdown')
+        sections['usa'] = FALLBACK_USA
 
     # Generate and write HTML
     try:
