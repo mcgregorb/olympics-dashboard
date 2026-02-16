@@ -91,16 +91,54 @@ FALLBACK_MEDALS = {
     'medal_events_today': 8, 'countries_with_medals': 26
 }
 
+_FALLBACK_USA_SPORTS = [
+    {'sport': 'Speed Skating', 'gold': 2, 'silver': 0, 'bronze': 0},       # Stolz 500m G, 1000m G
+    {'sport': 'Freestyle Skiing', 'gold': 1, 'silver': 3, 'bronze': 1},     # Lemley moguls G + dual moguls B, Kauf moguls S + dual moguls S, Hall slopestyle S
+    {'sport': 'Figure Skating', 'gold': 1, 'silver': 1, 'bronze': 0},       # Team event G, Chock/Bates ice dance S
+    {'sport': 'Alpine Skiing', 'gold': 1, 'silver': 1, 'bronze': 1},        # Johnson downhill G, + team event B (Wiles/Moltzan)
+    {'sport': 'Cross-Country Skiing', 'gold': 0, 'silver': 1, 'bronze': 1}, # Ogden sprint S, Diggins bronze
+    {'sport': 'Snowboarding', 'gold': 0, 'silver': 1, 'bronze': 0},         # Kim halfpipe S
+    {'sport': 'Short Track', 'gold': 0, 'silver': 1, 'bronze': 1},          # Mixed relay
+]
+# Auto-compute totals so they can never be inconsistent
 FALLBACK_USA = {
-    'sports': [
-        {'sport': 'Speed Skating', 'gold': 3, 'silver': 0, 'bronze': 0},
-        {'sport': 'Freestyle Skiing', 'gold': 1, 'silver': 2, 'bronze': 1},
-        {'sport': 'Alpine Skiing', 'gold': 1, 'silver': 0, 'bronze': 0},
-        {'sport': 'Figure Skating', 'gold': 2, 'silver': 1, 'bronze': 0},
-        {'sport': 'Snowboarding', 'gold': 0, 'silver': 1, 'bronze': 0},
-        {'sport': 'Cross-Country Skiing', 'gold': 0, 'silver': 0, 'bronze': 1},
-    ],
-    'total_gold': 5, 'total_silver': 8, 'total_bronze': 4, 'total': 17
+    'sports': _FALLBACK_USA_SPORTS,
+    'total_gold': sum(s['gold'] for s in _FALLBACK_USA_SPORTS),
+    'total_silver': sum(s['silver'] for s in _FALLBACK_USA_SPORTS),
+    'total_bronze': sum(s['bronze'] for s in _FALLBACK_USA_SPORTS),
+    'total': sum(s['gold'] + s['silver'] + s['bronze'] for s in _FALLBACK_USA_SPORTS),
+}
+
+FALLBACK_UPCOMING = {
+    'days': [
+        {
+            'day_num': 12, 'date': 'Feb 17', 'day_of_week': 'Tue', 'medal_count': 7,
+            'events': [
+                {'time_mst': '1:15 AM', 'event': "Snowboard - Women's Slopestyle Final", 'is_medal': True, 'iso_date': '2026-02-17T01:15:00-07:00'},
+                {'time_mst': '2:00 AM', 'event': "Figure Skating - Women's Short Program", 'is_medal': False, 'iso_date': '2026-02-17T02:00:00-07:00'},
+                {'time_mst': '3:30 AM', 'event': "Biathlon - Men's 4x7.5km Relay", 'is_medal': True, 'iso_date': '2026-02-17T03:30:00-07:00'},
+                {'time_mst': '4:00 AM', 'event': "Speed Skating - Women's Team Pursuit Final", 'is_medal': True, 'iso_date': '2026-02-17T04:00:00-07:00'},
+                {'time_mst': '4:30 AM', 'event': "Speed Skating - Men's Team Pursuit Final", 'is_medal': True, 'iso_date': '2026-02-17T04:30:00-07:00'},
+                {'time_mst': '5:00 AM', 'event': "Freestyle Skiing - Men's Big Air Final", 'is_medal': True, 'iso_date': '2026-02-17T05:00:00-07:00'},
+                {'time_mst': '5:30 AM', 'event': "Cross-Country - Nordic Combined 10km", 'is_medal': True, 'iso_date': '2026-02-17T05:30:00-07:00'},
+                {'time_mst': '6:00 AM', 'event': 'Bobsled - Two-Man Final', 'is_medal': True, 'iso_date': '2026-02-17T06:00:00-07:00'},
+                {'time_mst': '7:00 AM', 'event': "Ice Hockey - Women's Semifinal", 'is_medal': False, 'iso_date': '2026-02-17T07:00:00-07:00'},
+            ]
+        },
+        {
+            'day_num': 13, 'date': 'Feb 18', 'day_of_week': 'Wed', 'medal_count': 8,
+            'events': [
+                {'time_mst': '1:00 AM', 'event': "Alpine Skiing - Men's Slalom Run 1", 'is_medal': False, 'iso_date': '2026-02-18T01:00:00-07:00'},
+                {'time_mst': '2:00 AM', 'event': "Freestyle Skiing - Women's Aerials Final", 'is_medal': True, 'iso_date': '2026-02-18T02:00:00-07:00'},
+                {'time_mst': '3:00 AM', 'event': "Short Track - Men's 500m Final", 'is_medal': True, 'iso_date': '2026-02-18T03:00:00-07:00'},
+                {'time_mst': '4:00 AM', 'event': "Alpine Skiing - Men's Slalom Run 2", 'is_medal': True, 'iso_date': '2026-02-18T04:00:00-07:00'},
+                {'time_mst': '4:30 AM', 'event': "Biathlon - Women's 12.5km Mass Start", 'is_medal': True, 'iso_date': '2026-02-18T04:30:00-07:00'},
+                {'time_mst': '5:00 AM', 'event': "Snowboard - Men's Big Air Final", 'is_medal': True, 'iso_date': '2026-02-18T05:00:00-07:00'},
+                {'time_mst': '6:00 AM', 'event': "Cross-Country Skiing - Women's 10km", 'is_medal': True, 'iso_date': '2026-02-18T06:00:00-07:00'},
+                {'time_mst': '8:00 AM', 'event': "Ice Hockey - Men's Quarterfinal", 'is_medal': False, 'iso_date': '2026-02-18T08:00:00-07:00'},
+            ]
+        },
+    ]
 }
 
 FALLBACK_ATHLETES = {
@@ -402,7 +440,9 @@ def build_schedule_rows(schedule):
         else:
             badge = '<span class="badge badge-upcoming">UPCOMING</span>'
 
-        result = f' {html_escape(evt.get("result", ""))}' if evt.get('result') and status == 'done' else ''
+        raw_result = evt.get('result', '') if status == 'done' else ''
+        # Filter out results containing TBD placeholders — show nothing rather than bogus data
+        result = f' {html_escape(raw_result)}' if raw_result and 'TBD' not in raw_result else ''
 
         rows += f'<div class="{" ".join(classes)}"><span class="evt-time">{html_escape(evt["time_mst"])}</span><div class="evt-info"><div class="evt-name">{html_escape(evt["event"])}</div><div class="evt-detail">{badge}{result}</div></div></div>\n'
     return rows
@@ -436,7 +476,7 @@ def build_results_tabs(results):
             cards = '<div class="section-empty">\u23f3 Results pending \u2014 medal events in progress or upcoming today. Check back soon!</div>\n'
         else:
             for r in results_list:
-                cards += f'<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">\U0001f947 {html_escape(r["event"])}</span><span class="athlete-medal-tag g">Day {day["day_num"]}</span></div><div class="athlete-bio">\U0001f947 {html_escape(r["gold"])} \u2022 \U0001f948 {html_escape(r["silver"])} \u2022 \U0001f949 {html_escape(r["bronze"])}</div></div>\n'
+                cards += f'<div class="result-card"><div class="result-event">{html_escape(r["event"])}</div><div class="result-medals">\U0001f947 {html_escape(r["gold"])} &bull; \U0001f948 {html_escape(r["silver"])} &bull; \U0001f949 {html_escape(r["bronze"])}</div></div>\n'
         contents += f'<div id="{day_id}" class="day-content{active}">\n{cards}</div>\n'
 
     return f'<div class="day-tabs">\n{tabs}</div>\n{contents}'
@@ -563,13 +603,8 @@ def generate_html(medal_data, schedule, usa, results, headlines, videos, athlete
     timestamp = now.strftime('%a, %b %d %I:%M %p MST')
     data_date = now.strftime('%Y-%m-%d')
 
-    # Calculate day from GAMES_START as fallback
-    computed_day = max(1, (now - GAMES_START).days + 1)
-    raw_day = medal_data.get('day', computed_day)
-    try:
-        day = int(raw_day)
-    except (TypeError, ValueError):
-        day = computed_day
+    # Always compute day from current date — never trust API-returned day number
+    day = max(1, (now - GAMES_START).days + 1)
     events_complete = medal_data.get('events_complete') or FALLBACK_MEDALS['events_complete']
     total_events = medal_data.get('total_events') or 116
     medal_today = medal_data.get('medal_events_today') or FALLBACK_MEDALS['medal_events_today']
@@ -721,6 +756,9 @@ tr:hover td {{ background: rgba(56,189,248,0.04); }}
 .day-tab:hover {{ opacity: 0.85; }}
 .day-content {{ display: none; }}
 .day-content.active {{ display: block; }}
+.result-card {{ background: var(--bg-surface); border-radius: 8px; padding: 12px 16px; margin-bottom: 6px; border-left: 3px solid var(--gold); }}
+.result-card .result-event {{ font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }}
+.result-card .result-medals {{ font-size: 0.82rem; color: var(--text-secondary); }}
 .video-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }}
 .video-card {{ background: var(--bg-surface); border-radius: 8px; overflow: hidden; border: 1px solid var(--bg-muted); transition: transform 0.2s; }}
 .video-card:hover {{ transform: translateY(-2px); }}
@@ -1003,9 +1041,15 @@ def main():
     if not sections['medals'].get('medals'):
         print('  \u21b3 Using fallback medal data')
         sections['medals'] = FALLBACK_MEDALS
-    if not sections['usa'].get('sports'):
-        print('  \u21b3 Using fallback USA breakdown')
+    usa_sports = sections['usa'].get('sports', [])
+    usa_sport_total = sum(s.get('gold', 0) + s.get('silver', 0) + s.get('bronze', 0) for s in usa_sports)
+    if not usa_sports or usa_sport_total < 10:
+        # API returned empty or suspiciously incomplete data — use fallback
+        print(f'  \u21b3 Using fallback USA breakdown (API returned {usa_sport_total} medals across {len(usa_sports)} sports)')
         sections['usa'] = FALLBACK_USA
+    if not sections['upcoming'].get('days'):
+        print('  \u21b3 Using fallback upcoming events')
+        sections['upcoming'] = FALLBACK_UPCOMING
 
     # Generate and write HTML
     try:
