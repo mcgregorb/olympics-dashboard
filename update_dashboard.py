@@ -527,16 +527,43 @@ def scrape_medal_winners():
 
             # Extract medalists — get text with country names, replacing <br> with separator
             def extract_medalist(cell):
-                """Extract 'Name (CODE)' from a table cell with links and flag images."""
-                # Clone cell to avoid modifying the tree
+                """Extract medalist as 'Name (CODE)' or 'CODE' for team-only entries."""
                 import copy
                 cell_copy = copy.deepcopy(cell)
+                # Remove flag images
+                for img in cell_copy.find_all('img'):
+                    img.decompose()
+                # Replace <br> with newline for segment splitting
                 for br in cell_copy.find_all('br'):
-                    br.replace_with(' | ')
-                text = cell_copy.get_text(strip=True)
+                    br.replace_with('\n')
+                text = cell_copy.get_text(strip=False)
                 text = re.sub(r'\[.*?\]', '', text)  # Remove footnotes
                 text = re.sub(r'\xa0', ' ', text)
-                return text.strip()
+                parts = [p.strip() for p in text.split('\n') if p.strip()]
+                if not parts:
+                    return ''
+                # Separate country names from athlete names
+                country_code = None
+                athlete_parts = []
+                for p in parts:
+                    matched_country = False
+                    for cname, code in COUNTRY_CODES.items():
+                        if p.lower() == cname.lower():
+                            country_code = code
+                            matched_country = True
+                            break
+                    if not matched_country:
+                        # Check if it's a bare 3-letter IOC code
+                        if re.match(r'^[A-Z]{3}$', p) and p in COUNTRY_CODES.values():
+                            country_code = p
+                        else:
+                            athlete_parts.append(p)
+                if athlete_parts and country_code:
+                    return f'{", ".join(athlete_parts)} ({country_code})'
+                elif country_code:
+                    return country_code
+                else:
+                    return ', '.join(parts)
 
             gold = extract_medalist(cells[1]) if len(cells) > 1 else ''
             silver = extract_medalist(cells[2]) if len(cells) > 2 else ''
@@ -1244,7 +1271,10 @@ def build_medal_table_rows(medals, country_details=None):
                 medal_type = evt.get('medal', 'gold')
                 medal_cls = {'gold': 'g', 'silver': 's', 'bronze': 'b'}.get(medal_type, 'g')
                 medal_emoji = {'gold': '\U0001f947', 'silver': '\U0001f948', 'bronze': '\U0001f949'}.get(medal_type, '\U0001f947')
-                athlete = html_escape(evt.get('athlete', ''))
+                # Strip country code suffix — the parent row already shows the country
+                athlete_raw = evt.get('athlete', '')
+                athlete_display = re.sub(r'\s*\([A-Z]{3}\)\s*$', '', athlete_raw).strip() or athlete_raw
+                athlete = html_escape(athlete_display)
                 event_name = html_escape(evt.get('event', ''))
                 detail_rows += f'<div class="medal-detail-item"><span class="medal-detail-emoji {medal_cls}">{medal_emoji}</span><span class="medal-detail-event">{event_name}</span><span class="medal-detail-athlete">{athlete}</span></div>\n'
             rows += f'<tr class="country-detail-row" style="display:none;"><td colspan="6"><div class="medal-details">{detail_rows}</div></td></tr>\n'
@@ -1916,6 +1946,79 @@ def validate_schedule_times(schedule):
     return {'events': validated}
 
 
+# ── Data Validator ─────────────────────────────────────────────────────────
+
+def validate_dashboard_data(medal_data, schedule, usa, results, country_details):
+    """Validate dashboard data for consistency and formatting. Returns list of warnings."""
+    warnings = []
+
+    # 1. Medal table consistency
+    medals = medal_data.get('medals', [])
+    if not medals:
+        warnings.append('CRITICAL: Medal table is empty')
+    else:
+        for m in medals:
+            expected = m['gold'] + m['silver'] + m['bronze']
+            if expected != m['total']:
+                warnings.append(f"Medal math: {m['country']} {m['gold']}+{m['silver']}+{m['bronze']}={expected} != total={m['total']}")
+
+    # 2. USA breakdown vs medal table cross-check
+    if usa.get('sports'):
+        computed_g = sum(s['gold'] for s in usa['sports'])
+        computed_s = sum(s['silver'] for s in usa['sports'])
+        computed_b = sum(s['bronze'] for s in usa['sports'])
+        if computed_g != usa.get('total_gold', computed_g):
+            warnings.append(f'USA gold mismatch: sports sum={computed_g}, declared={usa.get("total_gold")}')
+        usa_row = next((m for m in medals if m.get('code') == 'USA'), None)
+        if usa_row:
+            table_total = usa_row['gold'] + usa_row['silver'] + usa_row['bronze']
+            breakdown_total = computed_g + computed_s + computed_b
+            if breakdown_total != table_total:
+                warnings.append(f'USA breakdown total={breakdown_total} != medal table total={table_total}')
+
+    # 3. Pipe character checks (formatting regression)
+    pipe_found = False
+    for e in schedule.get('events', []):
+        if '|' in e.get('result', ''):
+            pipe_found = True
+            break
+    for day in results.get('days', []):
+        for r in day.get('results', []):
+            for fld in ['gold', 'silver', 'bronze']:
+                if '|' in r.get(fld, ''):
+                    pipe_found = True
+                    break
+    if country_details:
+        for c in country_details.get('countries', []):
+            for evt in c.get('events', []):
+                if '|' in evt.get('athlete', ''):
+                    pipe_found = True
+                    break
+    if pipe_found:
+        warnings.append('FORMATTING: Pipe characters "|" found in display data')
+
+    # 4. TBD checks in results
+    tbd_count = 0
+    for day in results.get('days', []):
+        for r in day.get('results', []):
+            for fld in ['gold', 'silver', 'bronze']:
+                if r.get(fld, '') == 'TBD':
+                    tbd_count += 1
+    if tbd_count > 0:
+        warnings.append(f'DATA: {tbd_count} TBD medal entries in results')
+
+    # 5. Schedule completeness
+    events = schedule.get('events', [])
+    if not events:
+        warnings.append('WARNING: Schedule has no events')
+
+    # 6. Results completeness
+    if not results.get('days'):
+        warnings.append('WARNING: No result days available')
+
+    return warnings
+
+
 # ── Entry Point ────────────────────────────────────────────────────────────
 
 def main():
@@ -2051,6 +2154,19 @@ def main():
     # ── Step 11: Athletes (hardcoded authoritative data) ──────────────────
     sections['athletes'] = FALLBACK_ATHLETES
     print('  ✓ Authoritative athlete data')
+
+    # ── Step 12: Data Validation ──────────────────────────────────────────
+    print('\n── Validation ──')
+    warnings = validate_dashboard_data(
+        sections['medals'], sections['schedule'], sections['usa'],
+        sections['results'], sections.get('country_details', {})
+    )
+    if warnings:
+        for w in warnings:
+            print(f'  ⚠ {w}')
+        print(f'  → {len(warnings)} validation warning(s) — review above')
+    else:
+        print('  ✓ All validation checks passed')
 
     # ── Generate and write HTML ───────────────────────────────────────────
     try:
