@@ -675,16 +675,15 @@ def derive_latest_results(medal_winners, day_num):
             'bronze': r.get('bronze', 'TBD'),
         })
 
-    # Try to get day-specific data from chronological summary
-    try:
-        day_results = scrape_chronological_results(day_num)
-        if day_results and day_results.get('days'):
-            total = sum(len(d.get('results', [])) for d in day_results['days'])
-            if total > 0:
-                return day_results
-            print('  ! Chronological results returned but had 0 events, using fallback')
-    except Exception as e:
-        print(f'  ! Chronological summary scrape failed: {e}')
+    # NOTE: Chronological summary scraper disabled — Wikipedia's table structure
+    # varies (extra columns for country, sport vs event split) causing column
+    # misalignment.  The fallback below uses medal_winners data which is reliable.
+    # try:
+    #     day_results = scrape_chronological_results(day_num)
+    #     ...
+    # except Exception as e:
+    #     print(f'  ! Chronological summary scrape failed: {e}')
+    print('  ℹ Using medal-winners fallback for latest results (chronological scraper disabled)')
 
     # Fallback: show most recent results (last N events) as today,
     # and earlier events as previous days
