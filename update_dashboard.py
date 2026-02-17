@@ -530,7 +530,7 @@ def scrape_medal_winners():
                 """Extract 'Name (CODE)' from a table cell with links and flag images."""
                 # Clone cell to avoid modifying the tree
                 import copy
-                cell_copy = copy.copy(cell)
+                cell_copy = copy.deepcopy(cell)
                 for br in cell_copy.find_all('br'):
                     br.replace_with(' | ')
                 text = cell_copy.get_text(strip=True)
@@ -967,6 +967,11 @@ def scrape_sport_page_events(wiki_page, sport_name):
                 if re.match(r'^\d{1,2}:\d{2}', ct_clean):
                     continue
                 if re.match(r'^(?:February|Feb)', ct_clean):
+                    continue
+                # Skip date headers like "Saturday, 7 February", "15 February", "Thursday, 12 February"
+                if re.match(r'^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)[,\s]', ct_clean, re.I):
+                    continue
+                if re.match(r'^\d{1,2}\s+(?:February|Feb|January|Jan)\b', ct_clean, re.I):
                     continue
                 if len(ct_clean) > len(event_name) and len(ct_clean) > 5:
                     event_name = ct_clean
