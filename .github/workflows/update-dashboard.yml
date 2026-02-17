@@ -21,7 +21,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests beautifulsoup4 feedparser lxml google-api-python-client
 
       - name: Show current state
         run: |
@@ -34,13 +34,13 @@ jobs:
           echo "=== Current index.html size ==="
           wc -c index.html
           echo "=== Schedule header in current index.html ==="
-          grep -o 'Schedule.*MST\|Today.*Schedule[^<]*' index.html | head -3 || echo "No schedule header found"
+          grep -o 'Schedule.*MST\\|Today.*Schedule[^<]*' index.html | head -3 || echo "No schedule header found"
           echo "=== Data from timestamp ==="
           grep -o 'Data from:[^<]*' index.html | head -1 || echo "No timestamp found"
 
       - name: Run update script
         env:
-          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: |
           echo "=== Running update_dashboard.py ==="
           python update_dashboard.py 2>&1
@@ -63,10 +63,10 @@ jobs:
           echo "=== Git diff stats ==="
           git diff --staged --stat || echo "No staged changes"
           if git diff --staged --quiet; then
-            echo "⚠️ NO CHANGES detected in index.html — nothing to commit"
+            echo "\u26a0\ufe0f NO CHANGES detected in index.html \u2014 nothing to commit"
           else
-            echo "✅ Changes detected — committing"
+            echo "\u2705 Changes detected \u2014 committing"
             git commit -m "Auto-update dashboard $(date -u +'%Y-%m-%d %H:%M UTC')"
             git push
-            echo "✅ Pushed successfully"
+            echo "\u2705 Pushed successfully"
           fi
