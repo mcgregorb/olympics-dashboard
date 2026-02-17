@@ -478,15 +478,24 @@ def scrape_medal_winners():
     soup = BeautifulSoup(html, 'lxml')
     results = []
     current_sport = ''
+    processed_tables = set()  # Track tables already parsed to avoid duplicates
+    skip_headings = {'References', 'See also', 'Notes', 'External links', 'Contents'}
 
-    # Wikipedia structures this as multiple tables, one per sport, each preceded by an h3/h2 heading
+    # Wikipedia structures this as multiple tables, one per sport, each preceded by an h2/h3 heading.
+    # Modern Wikipedia API: headings are plain <h2>/<h3> tags wrapped in <div class="mw-heading">.
+    # Old format used <span class="mw-headline"> inside headings — no longer present.
     for heading in soup.find_all(['h2', 'h3']):
-        span = heading.find('span', class_='mw-headline')
-        if not span:
+        heading_text = heading.get_text(strip=True)
+        if not heading_text or heading_text in skip_headings:
             continue
-        sport_name = span.get_text(strip=True)
-        # Skip non-sport headings like "References", "See also", etc.
-        if sport_name in ('References', 'See also', 'Notes', 'External links', 'Contents'):
+
+        # h2 = sport name (Alpine skiing, Biathlon, etc.)
+        # h3 = sub-category (Men's events, Women's events, Mixed events, etc.)
+        if heading.name == 'h2':
+            current_sport = heading_text
+
+        # Skip if no sport context yet
+        if not current_sport:
             continue
 
         # Find the next wikitable after this heading
@@ -494,29 +503,37 @@ def scrape_medal_winners():
         if not table:
             continue
 
+        # Skip tables we've already processed (h2 and h3 may point to same table)
+        table_id = id(table)
+        if table_id in processed_tables:
+            continue
+        processed_tables.add(table_id)
+
         for row in table.find_all('tr'):
             cells = row.find_all(['td', 'th'])
             if len(cells) < 4:
                 continue
-            # Skip header rows
+            # Skip header rows (all th, no td)
             if row.find('th') and not row.find('td'):
                 continue
 
             texts = [c.get_text(strip=True) for c in cells]
-            # Typical format: Event | Gold | Silver | Bronze (sometimes with country flags/links)
-            # The first cell with substantive text is the event, then G, S, B
+            # Typical format: Event | Gold | Silver | Bronze
             event = texts[0] if texts[0] else ''
             if not event or event.startswith('Event') or event.startswith('Discipline'):
                 continue
+            # Clean "details" link text that Wikipedia appends
+            event = re.sub(r'details$', '', event).strip()
 
-            # Extract medalists — try to get text with country codes
+            # Extract medalists — get text with country names, replacing <br> with separator
             def extract_medalist(cell):
-                """Extract 'Name (CODE)' from a table cell that may contain links and flag images."""
-                # Get all text, replacing <br> with separator
-                for br in cell.find_all('br'):
+                """Extract 'Name (CODE)' from a table cell with links and flag images."""
+                # Clone cell to avoid modifying the tree
+                import copy
+                cell_copy = copy.copy(cell)
+                for br in cell_copy.find_all('br'):
                     br.replace_with(' | ')
-                text = cell.get_text(strip=True)
-                # Clean up common Wikipedia artifacts
+                text = cell_copy.get_text(strip=True)
                 text = re.sub(r'\[.*?\]', '', text)  # Remove footnotes
                 text = re.sub(r'\xa0', ' ', text)
                 return text.strip()
@@ -527,7 +544,7 @@ def scrape_medal_winners():
 
             if gold or silver or bronze:
                 results.append({
-                    'sport': sport_name,
+                    'sport': current_sport,
                     'event': event,
                     'gold': gold,
                     'silver': silver,
@@ -576,24 +593,37 @@ def derive_usa_breakdown(medal_winners):
 def derive_country_details(medal_winners):
     """Derive per-country medal event details from the full winners list."""
     countries = {}
+
+    def _find_country_code(text):
+        """Find country code from medalist text — handles both '(USA)' codes and full names."""
+        # First try 3-letter codes like (NOR), USA, etc.
+        codes = re.findall(r'\b([A-Z]{3})\b', text)
+        for code in codes:
+            # Verify it's a real country code
+            for name, c in COUNTRY_CODES.items():
+                if c == code:
+                    return code, name
+        # Fall back to full country name matching
+        for name, code in COUNTRY_CODES.items():
+            if name.lower() in text.lower():
+                return code, name
+        return None, None
+
     for r in medal_winners:
         for medal_type in ['gold', 'silver', 'bronze']:
             text = r.get(medal_type, '')
-            # Extract country codes like (NOR), (USA), (ITA) from medalist text
-            codes = re.findall(r'\b([A-Z]{3})\b', text)
-            for code in codes:
-                if code not in countries:
-                    countries[code] = {'country': '', 'code': code, 'events': []}
-                # Reverse-lookup country name
-                for name, c in COUNTRY_CODES.items():
-                    if c == code:
-                        countries[code]['country'] = name
-                        break
-                countries[code]['events'].append({
-                    'event': f'{r["sport"]} - {r["event"]}',
-                    'medal': medal_type,
-                    'athlete': text,
-                })
+            if not text:
+                continue
+            code, country_name = _find_country_code(text)
+            if not code:
+                continue
+            if code not in countries:
+                countries[code] = {'country': country_name, 'code': code, 'events': []}
+            countries[code]['events'].append({
+                'event': f'{r["sport"]} - {r["event"]}',
+                'medal': medal_type,
+                'athlete': text,
+            })
 
     return {'countries': list(countries.values())}
 
@@ -694,11 +724,23 @@ def scrape_chronological_results(day_num):
         if not day_heading:
             continue
 
-        # Find medal events listed under this day heading
+        # Find medal events listed under this day heading.
+        # Modern Wikipedia wraps headings in <div class="mw-heading">, so
+        # find_next_sibling() on the h2/h3 only finds siblings inside that div.
+        # Navigate to the wrapper div first, then iterate its siblings.
+        start_elem = day_heading
+        if day_heading.parent and 'mw-heading' in ' '.join(day_heading.parent.get('class', [])):
+            start_elem = day_heading.parent
+
         results = []
-        elem = day_heading.find_next_sibling()
-        while elem and elem.name not in ['h2', 'h3']:
-            if elem.name == 'table' and 'wikitable' in elem.get('class', []):
+        elem = start_elem.find_next_sibling()
+        while elem:
+            # Stop at next heading (either bare h2/h3 or a mw-heading wrapper div)
+            if elem.name in ['h2', 'h3']:
+                break
+            if elem.name == 'div' and 'mw-heading' in ' '.join(elem.get('class', [])):
+                break
+            if elem.name == 'table' and 'wikitable' in ' '.join(elem.get('class', [])):
                 for row in elem.find_all('tr'):
                     cells = row.find_all(['td'])
                     if len(cells) >= 4:
@@ -708,7 +750,7 @@ def scrape_chronological_results(day_num):
                         bronze = cells[3].get_text(strip=True)
                         if event and gold:
                             results.append({
-                                'event': event,
+                                'event': re.sub(r'\[.*?\]', '', event),
                                 'gold': re.sub(r'\[.*?\]', '', gold),
                                 'silver': re.sub(r'\[.*?\]', '', silver),
                                 'bronze': re.sub(r'\[.*?\]', '', bronze),
@@ -717,7 +759,6 @@ def scrape_chronological_results(day_num):
                 # Some days list medal events in list format
                 for li in elem.find_all('li'):
                     text = li.get_text(strip=True)
-                    # Look for medal emoji patterns
                     if '\U0001f947' in text or 'gold' in text.lower() or 'medal' in text.lower():
                         results.append({
                             'event': text[:80],
@@ -892,10 +933,16 @@ def scrape_sport_page_events(wiki_page, sport_name):
             cell_texts = [c.get_text(strip=True) for c in cells]
             row_text = ' '.join(cell_texts)
 
-            # Extract date
-            date_match = re.search(r'(?:February|Feb)[.,]?\s*(\d{1,2})', row_text)
+            # Extract date — handle both "February 7" and "7 February" formats
+            # Use negative lookahead to avoid matching time components like "February 11:30"
+            date_match = re.search(r'(?:February|Feb)[.,]?\s*(\d{1,2})(?!\s*:)', row_text)
+            if not date_match:
+                # European format: "7 February" or "7 Feb"
+                date_match = re.search(r'(\d{1,2})\s+(?:February|Feb)\b', row_text)
             if date_match:
-                current_date = f'2026-02-{int(date_match.group(1)):02d}'
+                day_val = int(date_match.group(1))
+                if 1 <= day_val <= 28:  # Sanity check
+                    current_date = f'2026-02-{day_val:02d}'
 
             # Also try ISO format dates
             iso_match = re.search(r'2026-02-(\d{2})', row_text)
@@ -1033,18 +1080,34 @@ def build_today_schedule(wiki_events, medal_winners):
         time_mst = cet_to_mst_str(tc[0], tc[1])
         full_name = f'{e["sport"]} - {e["event"]}'
 
-        # Try to find result from medal winners
+        # Determine event status using medal results + time-based logic
         result = ''
         status = 'upcoming'
+
+        # First check: do we have medal results for this event?
         winner = _match_event_in_winners(e['sport'], e['event'], medal_winners)
         if winner:
             status = 'done'
             result = f'\U0001f947 {winner.get("gold", "")} \u2022 \U0001f948 {winner.get("silver", "")} \u2022 \U0001f949 {winner.get("bronze", "")}'
         else:
-            # Check if event might be live
-            mst_h = (tc[0] - 8) % 24
-            if mst_h <= now.hour <= mst_h + 2 and e['is_medal']:
-                status = 'live'
+            # Time-based status: convert event CET time to MST for comparison
+            event_date = now.date()
+            try:
+                event_cet_dt = datetime(event_date.year, event_date.month, event_date.day,
+                                        tc[0], tc[1], tzinfo=CET)
+                event_mst_dt = event_cet_dt.astimezone(MST)
+
+                if now > event_mst_dt + timedelta(hours=3):
+                    # Event ended 3+ hours ago — mark as done
+                    status = 'done'
+                elif now > event_mst_dt + timedelta(minutes=30):
+                    # Event likely in progress or recently finished
+                    status = 'live' if e['is_medal'] else 'done'
+                elif now >= event_mst_dt - timedelta(minutes=15):
+                    # Event starting soon or just started
+                    status = 'live'
+            except Exception:
+                pass  # Keep as upcoming if time conversion fails
 
         schedule_events.append({
             'time_mst': time_mst,
