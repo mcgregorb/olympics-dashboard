@@ -144,14 +144,14 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <h1>Milano Cortina 2026</h1>
 <p class="subtitle">Winter Olympics Dashboard &bull; <span id="day-label">Day 13</span></p>
 <div class="header-meta">
-<span class="timestamp-badge">Data from: <span id="ts">Wed, Feb 18 10:51 AM MST</span> &bull; Auto-refreshes every 30 min</span>
+<span class="timestamp-badge">Data from: <span id="ts">Wed, Feb 18 01:02 PM MST</span> &bull; Auto-refreshes every 30 min</span>
 <button class="refresh-btn" onclick="refreshDashboard()">&#x1F504; Refresh Data</button>
 </div>
 <p style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;"><a href="https://www.olympics.com/en/milano-cortina-2026/medals" target="_blank" style="color:var(--accent);">View live medal table &rarr;</a> &bull; <a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);">Live schedule &rarr;</a></p>
 </header>
 
 <div class="stats-row">
-<div class="stat-box"><div class="label">Medal Events Today</div><div class="value">9</div></div>
+<div class="stat-box"><div class="label">Medal Events Today</div><div class="value">8</div></div>
 <div class="stat-box"><div class="label">Events Completed</div><div class="value">87</div></div>
 <div class="stat-box"><div class="label">Total Events</div><div class="value">116</div></div>
 <div class="stat-box"><div class="label">Events Remaining</div><div class="value">29</div></div>
@@ -160,80 +160,64 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 
 <div class="grid">
 <div class="panel">
-<div class="panel-hdr">&#x1F947; Medal Count by Country</div>
+<div class="panel-hdr">&#x1F947; Medal Count by Country (26 nations)</div>
 <table>
 <thead><tr><th>Rk</th><th>Country</th><th>&#x1F947;</th><th>&#x1F948;</th><th>&#x1F949;</th><th>Tot</th></tr></thead>
 <tbody>
-<tr><td class="rk">1</td><td class="country-name">🇳🇴 Norway</td><td class="g">15</td><td class="s">8</td><td class="b">9</td><td class="tot">32</td></tr>
+<tr><td class="rk">1</td><td class="country-name">🇳🇴 Norway</td><td class="g">15</td><td class="s">8</td><td class="b">10</td><td class="tot">33</td></tr>
 <tr><td class="rk">2</td><td class="country-name">🇮🇹 Italy</td><td class="g">9</td><td class="s">4</td><td class="b">12</td><td class="tot">25</td></tr>
-<tr class="us-row"><td class="rk">3</td><td class="country-name">🇺🇸 United States</td><td class="g">6</td><td class="s">11</td><td class="b">6</td><td class="tot">23</td></tr>
-<tr><td class="rk">4</td><td class="country-name">🇩🇪 Germany</td><td class="g">5</td><td class="s">8</td><td class="b">8</td><td class="tot">21</td></tr>
-<tr><td class="rk">5</td><td class="country-name">🇯🇵 Japan</td><td class="g">4</td><td class="s">6</td><td class="b">10</td><td class="tot">20</td></tr>
-<tr><td class="rk">6</td><td class="country-name">🇦🇹 Austria</td><td class="g">5</td><td class="s">8</td><td class="b">4</td><td class="tot">17</td></tr>
-<tr><td class="rk">7</td><td class="country-name">🇫🇷 France</td><td class="g">5</td><td class="s">7</td><td class="b">4</td><td class="tot">16</td></tr>
-<tr><td class="rk">8</td><td class="country-name">🇳🇱 Netherlands</td><td class="g">6</td><td class="s">6</td><td class="b">1</td><td class="tot">13</td></tr>
-<tr><td class="rk">8</td><td class="country-name">🇸🇪 Sweden</td><td class="g">6</td><td class="s">5</td><td class="b">2</td><td class="tot">13</td></tr>
-<tr><td class="rk">10</td><td class="country-name">🇨🇭 Switzerland</td><td class="g">5</td><td class="s">3</td><td class="b">3</td><td class="tot">11</td></tr>
+<tr class="us-row"><td class="rk">3</td><td class="country-name">🇺🇸 United States</td><td class="g">7</td><td class="s">11</td><td class="b">6</td><td class="tot">24</td></tr>
+<tr><td class="rk">4</td><td class="country-name">🇯🇵 Japan</td><td class="g">5</td><td class="s">6</td><td class="b">11</td><td class="tot">22</td></tr>
+<tr><td class="rk">5</td><td class="country-name">🇩🇪 Germany</td><td class="g">5</td><td class="s">8</td><td class="b">8</td><td class="tot">21</td></tr>
+<tr><td class="rk">6</td><td class="country-name">🇫🇷 France</td><td class="g">6</td><td class="s">7</td><td class="b">4</td><td class="tot">17</td></tr>
+<tr><td class="rk">7</td><td class="country-name">🇦🇹 Austria</td><td class="g">5</td><td class="s">8</td><td class="b">4</td><td class="tot">17</td></tr>
+<tr><td class="rk">8</td><td class="country-name">🇸🇪 Sweden</td><td class="g">6</td><td class="s">6</td><td class="b">3</td><td class="tot">15</td></tr>
+<tr><td class="rk">9</td><td class="country-name">🇳🇱 Netherlands</td><td class="g">6</td><td class="s">6</td><td class="b">1</td><td class="tot">13</td></tr>
+<tr><td class="rk">10</td><td class="country-name">🇨🇭 Switzerland</td><td class="g">5</td><td class="s">4</td><td class="b">3</td><td class="tot">12</td></tr>
 <tr><td class="rk">11</td><td class="country-name">🇨🇦 Canada</td><td class="g">3</td><td class="s">4</td><td class="b">5</td><td class="tot">12</td></tr>
-<tr><td class="rk">12</td><td class="country-name">🇦🇺 Australia</td><td class="g">3</td><td class="s">1</td><td class="b">1</td><td class="tot">5</td></tr>
-<tr><td class="rk">12</td><td class="country-name">🇨🇿 Czechia</td><td class="g">2</td><td class="s">2</td><td class="b">0</td><td class="tot">4</td></tr>
-<tr><td class="rk">12</td><td class="country-name">🇸🇮 Slovenia</td><td class="g">2</td><td class="s">1</td><td class="b">1</td><td class="tot">4</td></tr>
-<tr><td class="rk">15</td><td class="country-name">🇵🇱 Poland</td><td class="g">0</td><td class="s">3</td><td class="b">1</td><td class="tot">4</td></tr>
+<tr><td class="rk">12</td><td class="country-name">🇨🇳 China</td><td class="g">2</td><td class="s">3</td><td class="b">4</td><td class="tot">9</td></tr>
+<tr><td class="rk">13</td><td class="country-name">🇦🇺 Australia</td><td class="g">3</td><td class="s">2</td><td class="b">1</td><td class="tot">6</td></tr>
+<tr><td class="rk">14</td><td class="country-name">🇰🇷 South Korea</td><td class="g">1</td><td class="s">2</td><td class="b">3</td><td class="tot">6</td></tr>
+<tr><td class="rk">15</td><td class="country-name">🇨🇿 Czechia</td><td class="g">2</td><td class="s">2</td><td class="b">0</td><td class="tot">4</td></tr>
+<tr><td class="rk">16</td><td class="country-name">🇸🇮 Slovenia</td><td class="g">2</td><td class="s">1</td><td class="b">1</td><td class="tot">4</td></tr>
+<tr><td class="rk">17</td><td class="country-name">🇵🇱 Poland</td><td class="g">0</td><td class="s">3</td><td class="b">1</td><td class="tot">4</td></tr>
+<tr><td class="rk">18</td><td class="country-name">🇫🇮 Finland</td><td class="g">0</td><td class="s">0</td><td class="b">4</td><td class="tot">4</td></tr>
+<tr><td class="rk">19</td><td class="country-name">🇬🇧 Great Britain</td><td class="g">3</td><td class="s">0</td><td class="b">0</td><td class="tot">3</td></tr>
+<tr><td class="rk">20</td><td class="country-name">🇳🇿 New Zealand</td><td class="g">0</td><td class="s">2</td><td class="b">1</td><td class="tot">3</td></tr>
+<tr><td class="rk">21</td><td class="country-name">🇱🇻 Latvia</td><td class="g">0</td><td class="s">1</td><td class="b">1</td><td class="tot">2</td></tr>
+<tr><td class="rk">22</td><td class="country-name">🇧🇬 Bulgaria</td><td class="g">0</td><td class="s">0</td><td class="b">2</td><td class="tot">2</td></tr>
+<tr><td class="rk">23</td><td class="country-name">🇰🇿 Kazakhstan</td><td class="g">1</td><td class="s">0</td><td class="b">0</td><td class="tot">1</td></tr>
+<tr><td class="rk">24</td><td class="country-name">🇧🇷 Brazil</td><td class="g">1</td><td class="s">0</td><td class="b">0</td><td class="tot">1</td></tr>
+<tr><td class="rk">25</td><td class="country-name">🇬🇪 Georgia</td><td class="g">0</td><td class="s">1</td><td class="b">0</td><td class="tot">1</td></tr>
+<tr><td class="rk">26</td><td class="country-name">🇧🇪 Belgium</td><td class="g">0</td><td class="s">0</td><td class="b">1</td><td class="tot">1</td></tr>
 </tbody>
 </table>
 </div>
 <div class="panel">
 <div class="panel-hdr">&#x1F4C5; Day 13 Schedule (MST)</div>
 <div class="evt-list">
-<div class="evt done medal-evt"><span class="evt-time">6:45 AM</span><div class="evt-info"><div class="evt-name">Women's Team Sprint</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> Results not fully specified in available data</div></div></div>
-<div class="evt done medal-evt"><span class="evt-time">7:15 AM</span><div class="evt-info"><div class="evt-name">Men's Team Sprint</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> 🥇 Johannes Hoesflot Klaebo &amp; Einar Hedegart (NOR) • 🥈 USA • 🥉 Results not fully specified</div></div></div>
-<div class="evt done medal-evt"><span class="evt-time">8:00 AM</span><div class="evt-info"><div class="evt-name">Women's Aerials, Final</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> 🥇 Megan Oldham (USA) • 🥈 Results not fully specified</div></div></div>
-<div class="evt done medal-evt"><span class="evt-time">8:30 AM</span><div class="evt-info"><div class="evt-name">Women's Slalom, Final</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> 🥇 Mikaela Shiffrin (USA) • 🥈 Camille Rast (SUI) • 🥉 Anna Swenn Larsson (SWE)</div></div></div>
-<div class="evt done medal-evt"><span class="evt-time">9:30 AM</span><div class="evt-info"><div class="evt-name">Women's Slopestyle, Final</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> Results not fully specified in available data</div></div></div>
-<div class="evt done medal-evt"><span class="evt-time">9:45 AM</span><div class="evt-info"><div class="evt-name">Women's 4x6km Relay, Final</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> Results not fully specified in available data</div></div></div>
-<div class="evt done"><span class="evt-time">7:10 AM</span><div class="evt-info"><div class="evt-name">Men's Ice Hockey, GER v SVK</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> Results not specified in available data</div></div></div>
-<div class="evt done"><span class="evt-time">11:40 AM</span><div class="evt-info"><div class="evt-name">Men's Ice Hockey, CZE v CAN</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> Results not specified in available data</div></div></div>
-<div class="evt done"><span class="evt-time">1:10 PM</span><div class="evt-info"><div class="evt-name">Men's Ice Hockey, SUI v FIN</div><div class="evt-detail"><span class="badge badge-done">FINAL</span> Results not specified in available data</div></div></div>
-<div class="evt medal-evt"><span class="evt-time">4:00 PM</span><div class="evt-info"><div class="evt-name">Women's 3000m Relay, Final</div><div class="evt-detail"><span class="badge badge-upcoming">UPCOMING</span></div></div></div>
-<div class="evt"><span class="evt-time">4:10 PM</span><div class="evt-info"><div class="evt-name">Men's Ice Hockey, SWE v USA</div><div class="evt-detail"><span class="badge badge-upcoming">UPCOMING</span></div></div></div>
+<div class="evt live-now medal-evt"><span class="evt-time">All Day</span><div class="evt-info"><div class="evt-name">Day 13 Events — February 18</div><div class="evt-detail"><span class="badge badge-live">LIVE</span></div></div></div>
+<div style="text-align:center;padding:12px 0;"><a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);font-size:0.85rem;font-weight:600;">View full live schedule on Olympics.com →</a></div>
 </div>
 </div>
 </div>
 
 <div class="grid">
 <div class="panel">
-<div class="panel-hdr">&#x1F1FA;&#x1F1F8; USA Medal Breakdown (12 Total)</div>
-<div class="sport-row"><span class="sport-label">Speed Skating</span><div class="sport-medals"><span class="g">2</span><span class="s">1</span><span class="b">0</span></div></div>
-<div class="sport-row"><span class="sport-label">Freestyle Skiing</span><div class="sport-medals"><span class="g">1</span><span class="s">1</span><span class="b">1</span></div></div>
-<div class="sport-row"><span class="sport-label">Alpine Skiing</span><div class="sport-medals"><span class="g">1</span><span class="s">0</span><span class="b">0</span></div></div>
-<div class="sport-row"><span class="sport-label">Figure Skating</span><div class="sport-medals"><span class="g">1</span><span class="s">1</span><span class="b">0</span></div></div>
-<div class="sport-row"><span class="sport-label">Bobsled</span><div class="sport-medals"><span class="g">1</span><span class="s">0</span><span class="b">0</span></div></div>
-<div class="sport-row"><span class="sport-label">Ice Dance</span><div class="sport-medals"><span class="g">0</span><span class="s">1</span><span class="b">0</span></div></div>
+<div class="panel-hdr">&#x1F1FA;&#x1F1F8; USA Medal Breakdown (24 Total)</div>
+<div class="sport-row"><span class="sport-label">Alpine skiing</span><div class="sport-medals"><span class="g">2</span><span class="s">1</span><span class="b">1</span></div></div>
+<div class="sport-row"><span class="sport-label">Speed skating</span><div class="sport-medals"><span class="g">2</span><span class="s">1</span><span class="b">0</span></div></div>
+<div class="sport-row"><span class="sport-label">Freestyle skiing</span><div class="sport-medals"><span class="g">1</span><span class="s">4</span><span class="b">1</span></div></div>
+<div class="sport-row"><span class="sport-label">Figure skating</span><div class="sport-medals"><span class="g">1</span><span class="s">1</span><span class="b">0</span></div></div>
+<div class="sport-row"><span class="sport-label">Bobsleigh</span><div class="sport-medals"><span class="g">1</span><span class="s">0</span><span class="b">1</span></div></div>
+<div class="sport-row"><span class="sport-label">Cross-country skiing</span><div class="sport-medals"><span class="g">0</span><span class="s">2</span><span class="b">1</span></div></div>
+<div class="sport-row"><span class="sport-label">Snowboarding</span><div class="sport-medals"><span class="g">0</span><span class="s">1</span><span class="b">1</span></div></div>
+<div class="sport-row"><span class="sport-label">Curling</span><div class="sport-medals"><span class="g">0</span><span class="s">1</span><span class="b">0</span></div></div>
+<div class="sport-row"><span class="sport-label">Luge</span><div class="sport-medals"><span class="g">0</span><span class="s">0</span><span class="b">1</span></div></div>
 </div>
 <div class="panel">
 <div class="panel-hdr">&#x1F947; Latest Medal Results</div>
-<div class="day-tabs">
-<button class="day-tab active" onclick="showDay('d13', this)">Day 13 (Feb 18)</button>
-<button class="day-tab" onclick="showDay('d12', this)">Day 12 (Feb 17)</button>
-<button class="day-tab" onclick="showDay('d11', this)">Day 11 (Feb 16)</button>
-</div>
-<div id="d13" class="day-content active">
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Men's Ice Hockey (GER v SVK)</span><span class="athlete-medal-tag g">Day 13</span></div><div class="athlete-bio">🥇 Slovakia (SVK) • 🥈  • 🥉 Germany (GER)</div></div>
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Women's Snowboard Slopestyle</span><span class="athlete-medal-tag g">Day 13</span></div><div class="athlete-bio">🥇 Mari Fukada (JPN) • 🥈 Zoi Sadowski-Synnott (NZL) • 🥉 Kokomo Murase (JPN)</div></div>
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Men's Snowboard Slopestyle</span><span class="athlete-medal-tag g">Day 13</span></div><div class="athlete-bio">🥇 Su Yiming (CHN) • 🥈 Taiga Hasegawa (JPN) • 🥉 Jake Canter (USA)</div></div>
-</div>
-<div id="d12" class="day-content">
-</div>
-<div id="d11" class="day-content">
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Women's Monobob</span><span class="athlete-medal-tag g">Day 11</span></div><div class="athlete-bio">🥇 Elana Meyers Taylor (USA) • 🥈 TBD • 🥉 Kaillie Humphries (CAN)</div></div>
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Pairs Figure Skating</span><span class="athlete-medal-tag g">Day 11</span></div><div class="athlete-bio">🥇 Riku Miura / Ryuichi Kihara (JPN) • 🥈 TBD • 🥉 TBD</div></div>
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Women's Freeski Big Air</span><span class="athlete-medal-tag g">Day 11</span></div><div class="athlete-bio">🥇 Megan Oldham (CAN) • 🥈 Eileen Gu (CHN) • 🥉 TBD</div></div>
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Women's Short Track 1000m</span><span class="athlete-medal-tag g">Day 11</span></div><div class="athlete-bio">🥇 Xandra Velzeboer (NED) • 🥈 Courtney Sarault (CAN) • 🥉 TBD</div></div>
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Men's Alpine Slalom</span><span class="athlete-medal-tag g">Day 11</span></div><div class="athlete-bio">🥇 Loic Meillard (SUI) • 🥈 Fabio Gstrein (AUT) • 🥉 Henrik Kristoffersen (NOR)</div></div>
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Men's Team Sprint Cross-Country</span><span class="athlete-medal-tag g">Day 11</span></div><div class="athlete-bio">🥇 Einar Hedegart / Johannes Høsflot Klæbo (NOR) • 🥈 Ben Ogden / Gus Schumacher (USA) • 🥉 Elia Barp / Federica Brignone (ITA)</div></div>
-<div class="athlete-card"><div class="athlete-top"><span class="athlete-name">🥇 Women's Aerials</span><span class="athlete-medal-tag g">Day 11</span></div><div class="athlete-bio">🥇 Xu Mengtao (CHN) • 🥈 Danielle Scott (AUS) • 🥉 Shao Qi (CHN)</div></div>
-</div>
-</div>
+<div class="section-empty">🏅 Detailed results update with each medal event. <a href="https://www.olympics.com/en/milano-cortina-2026/medals" target="_blank" style="color:var(--accent);">View full results →</a></div></div>
 </div>
 
 <div class="grid">
@@ -241,7 +225,8 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <div class="panel-hdr">&#x1F1FA;&#x1F1F8; USA Athlete Spotlights</div>
 <div class="evt-list">
 <div class="athlete-card"><div class="athlete-avatar avatar-speed">JS</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">Jordan Stolz &bull; Speed Skating</span><span class="athlete-medal-tag g">🥇 1000m</span> <span class="athlete-medal-tag g">🥇 500m</span> </div><div class="athlete-bio">Won two gold medals with Olympic records in both the 1000m and 500m. First American since 1980 to win multiple speedskating golds at a single Olympics.</div></div></div>
-<div class="athlete-card"><div class="athlete-avatar avatar-alpine">BJ</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">Breezy Johnson &bull; Alpine Skiing</span><span class="athlete-medal-tag g">🥇 Women's Downhill</span> </div><div class="athlete-bio">Won gold in the women's downhill, becoming only the second American woman to accomplish the feat. First gold medal for Team USA at these Games.</div></div></div>
+<div class="athlete-card"><div class="athlete-avatar avatar-alpine">MS</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">Mikaela Shiffrin &bull; Alpine Skiing</span><span class="athlete-medal-tag g">🥇 Giant Slalom</span> </div><div class="athlete-bio">Won gold in the giant slalom, adding to her legendary career with a record-extending Olympic medal count in alpine skiing.</div></div></div>
+<div class="athlete-card"><div class="athlete-avatar avatar-alpine">BJ</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">Breezy Johnson &bull; Alpine Skiing</span><span class="athlete-medal-tag g">🥇 Women's Downhill</span> </div><div class="athlete-bio">Won gold in the women's downhill, becoming only the second American woman to accomplish the feat.</div></div></div>
 <div class="athlete-card"><div class="athlete-avatar avatar-moguls">EL</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">Elizabeth Lemley &bull; Freestyle Skiing</span><span class="athlete-medal-tag g">🥇 Women's Moguls</span> <span class="athlete-medal-tag b">🥉 Women's Dual Moguls</span> </div><div class="athlete-bio">Won gold in her Olympic debut in women's moguls at just 20 years old, then added a bronze in dual moguls.</div></div></div>
 <div class="athlete-card"><div class="athlete-avatar avatar-figure">IM</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">Ilia Malinin &bull; Figure Skating</span><span class="athlete-medal-tag g">🥇 Team Event</span> </div><div class="athlete-bio">Known as the &quot;Quad God,&quot; delivered a dominant performance helping Team USA win gold in the figure skating team event.</div></div></div>
 <div class="athlete-card"><div class="athlete-avatar avatar-xc">BO</div><div class="athlete-content"><div class="athlete-top"><span class="athlete-name">Ben Ogden &bull; Cross-Country Skiing</span><span class="athlete-medal-tag s">🥈 Sprint</span> </div><div class="athlete-bio">Became the first American man to win an Olympic medal in cross-country skiing since 1976, earning silver in the sprint.</div></div></div>
@@ -254,25 +239,38 @@ tr:hover td { background: rgba(56,189,248,0.04); }
 <div class="panel-hdr">&#x1F4C6; Upcoming Events &mdash; Set Reminders</div>
 <div id="upcoming-events">
 <div class="upcoming-day-hdr">📅 Day 14 — Thu, Feb 19 (8 medal events)</div>
-<div class="upcoming-evt"><span class="ue-time">2:30 AM</span><span class="ue-name">Men's Freeski Halfpipe Qualifications</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Men\'s Freeski Halfpipe Qualifications','2026-02-19T02:30:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt"><span class="ue-time">11:30 AM</span><span class="ue-name">Women's Freeski Halfpipe Qualifications</span><span class="ue-type"></span><button class="remind-btn" onclick="setReminder(this,'Women\'s Freeski Halfpipe Qualifications','2026-02-19T11:30:00-07:00')">🔔 Remind</button></div>
-<div class="upcoming-evt medal"><span class="ue-time">3:00 AM</span><span class="ue-name">Alpine: Men's Giant Slalom</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Alpine: Men\'s Giant Slalom','2026-02-19T03:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-evt medal"><span class="ue-time">See Schedule</span><span class="ue-name">Day 14 Medal Events</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Day 14 Medal Events','2026-02-19T09:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-day-hdr">📅 Day 15 — Fri, Feb 20 (8 medal events)</div>
+<div class="upcoming-evt medal"><span class="ue-time">See Schedule</span><span class="ue-name">Day 15 Medal Events</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Day 15 Medal Events','2026-02-20T09:00:00-07:00')">🔔 Remind</button></div>
+<div class="upcoming-day-hdr">📅 Day 16 — Sat, Feb 21 (8 medal events)</div>
+<div class="upcoming-evt medal"><span class="ue-time">See Schedule</span><span class="ue-name">Day 16 Medal Events</span><span class="ue-type">🥇</span><button class="remind-btn" onclick="setReminder(this,'Day 16 Medal Events','2026-02-21T09:00:00-07:00')">🔔 Remind</button></div>
+<div style="text-align:center;padding:12px 0;"><a href="https://www.olympics.com/en/milano-cortina-2026/schedule" target="_blank" style="color:var(--accent);font-size:0.85rem;font-weight:600;">Full schedule on Olympics.com →</a></div>
 </div>
 </div>
 </div>
 
 <div class="grid">
 <div class="panel">
-<div class="panel-hdr">&#x1F4F0; Top 10 Headlines</div>
-<div class="section-empty">📰 Headlines temporarily unavailable. <a href="https://www.nbcolympics.com/" target="_blank" style="color:var(--accent);">Visit NBC Olympics →</a></div></div>
+<div class="panel-hdr">&#x1F4F0; Top Headlines</div>
+<div class="headline-item"><span class="hl-num">1</span><div><div class="hl-text"><a href="https://news.google.com/rss/articles/CBMi3AFBVV95cUxPLVlNSnZVQ2kxS0ZWQ1NWWU4ydnNWcER1bnhIZ0o2Mk40UVVReF9jMjhZTGRfVTN4blVleUtoT1E5WXV1OVdGenpRV1c5YU9ieElVbTdIbjFzVEhCY1htWTB1X1lJbklaNGRHdUd5M3pHMGoyWnFCWUI0MDZEdExQbDhkVG5lT3BRc0o1ajVPTmVEZHRsUGc5NE92aGV2RlhZNDYxX2xrOERkVlJ5R19kN2czV1dLZTdpYkdUcFJKc0JyVG1rX3l6LU5ydWg3QjF2dV95aTMzY25aa2Fl?oc=5" target="_blank">Winter Olympics 2026 live updates: Mikaela Shiffrin takes gold, Canada men's hockey escapes upset bid, Day 12 latest - T</a></div><div class="hl-src">Google News <span class="hl-date">Feb 18</span></div></div></div>
+<div class="headline-item"><span class="hl-num">2</span><div><div class="hl-text"><a href="https://news.google.com/rss/articles/CBMixAFBVV95cUxNZ0VKNWpMNjRmVTBKVWpXdUJyTmtCalZkRXZWOTBwaXV6N2FaazlyTk5Sbm15Z1RDX2NEVHFzVGdCeGo5MHdjSzVTMXhmSkdCMi1CeDlXUHZvR2czcF91NmIydFkyeUdsTjBGbkRpRHp0T3ljY1Z6SUJhT3ZZUHp5WldzbHVTYVY0aXFncUVHU3R6cUtCYWR0MXRFMkNCZ0xSeGJoLTR1RHR3TDlEZkNNRmdmVGQ3Y1pvSTZsdmxzWG9tX0ZY?oc=5" target="_blank">Winter Olympics 2026: speed skating, curling, ice hockey and glory for Shiffrin – live - The Guardian</a></div><div class="hl-src">Google News <span class="hl-date">Feb 18</span></div></div></div>
+<div class="headline-item"><span class="hl-num">3</span><div><div class="hl-text"><a href="https://news.google.com/rss/articles/CBMixgFBVV95cUxNbUJMVVFJWW9XdS11Vzh3LTNQXy1TM1lWX2R2bDAtVW9wcEJ3aWlGMVBZMUZxSG1xemV5VE5RR2MyZkRSMnVDWmtkbEhqYjh0czhvRXFyZHplRVFZeFMzaHhKS0hzeVdTSFhfa19vOU5PQUFlSzBRc1pLeTdnbTZ5R2trVGVPY1pCT3J2RHVVUDh2Y3ZBMmQ0YUVrZkRyV0l6UkJRZjY0ai1zR1B0SjVwanc3WkJOWW5jYkhaZU8zXy04a1ZkUXc?oc=5" target="_blank">2026 Winter Olympics live updates: Medals, scores, results, highlights from Milan Cortina Day 12 on Feb. 18 - NBC Olympi</a></div><div class="hl-src">Google News <span class="hl-date">Feb 18</span></div></div></div>
+<div class="headline-item"><span class="hl-num">4</span><div><div class="hl-text"><a href="https://news.google.com/rss/articles/CBMihgFBVV95cUxOR1VPRmhpV2ZoVl9pc210amZrQzdKa3ZLLWc2MUIwcGJHNElua0Vub0pqdkhndmhTOFAwTUYxREpuYXB4RDFlenV5ZEJWNjdaRFJydlk1YzJNS0pUeDNDRVJYNW1VOHVxeVZqM01XaTM5bEhwR2EzaFhZMURzSk9iQmhvRmZnZw?oc=5" target="_blank">Dog Suddenly Crashes 2026 Winter Olympics Cross-Country Race with a Sprint to the Finish - People.com</a></div><div class="hl-src">Google News <span class="hl-date">Feb 18</span></div></div></div>
+<div class="headline-item"><span class="hl-num">5</span><div><div class="hl-text"><a href="https://news.google.com/rss/articles/CBMirAFBVV95cUxObnowMjdQeXZNd1JYYk1jeWVBTWlEb0RsUm9lS0FadjdFenlIM21ESG9aNG90NTRqd09tNnhMek4zbk1QTlNsLWM2X0FEaU5OeEFQakNtUlpiSFJTSWJoYXd2NUxiZFhFSHZzeWp2OUNWVmthWGgwZllNYlg1OGIzXzBOQkp1bHRwNmRqSUZjQkd6R1E0azlwZGtmNzV5TEtWNFh6S2JORUpWZ1A4?oc=5" target="_blank">Surprise 4-legged Olympic competitor wows cross-country fans - NPR</a></div><div class="hl-src">Google News <span class="hl-date">Feb 18</span></div></div></div>
+</div>
 <div class="panel">
-<div class="panel-hdr">&#x1F3AC; Top Video Highlights</div>
+<div class="panel-hdr">&#x1F3AC; Video Highlights</div>
 <div class="video-grid">
-<div class="video-card"><a href="https://www.youtube.com/watch?v=YNHTziooCyQ" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/YNHTziooCyQ/hqdefault.jpg" alt="Mikaela Shiffrin highlights the top moments in slalom Run 1" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-1" style="display:none;">🎿</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Mikaela Shiffrin highlights the top moments in slalom Run 1</div><div class="vid-src">NBC Sports • Feb 18</div></div></a></div>
-<div class="video-card"><a href="https://www.youtube.com/watch?v=EYCkyztRPHo" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/EYCkyztRPHo/hqdefault.jpg" alt="Team USA's best moments from Day 6" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-2" style="display:none;">🏅</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Team USA's best moments from Day 6</div><div class="vid-src">NBC Sports • Feb 13</div></div></a></div>
-<div class="video-card"><a href="https://www.youtube.com/watch?v=yCCEOIz5Tu8" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/yCCEOIz5Tu8/hqdefault.jpg" alt="Team USA's best moments from Day 5" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-3" style="display:none;">⛸️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Team USA's best moments from Day 5</div><div class="vid-src">NBC Sports • Feb 12</div></div></a></div>
-<div class="video-card"><a href="https://www.youtube.com/watch?v=pHbKHI4ZeQ4" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/pHbKHI4ZeQ4/hqdefault.jpg" alt="Best moments of Week 1 at the 2026 Milan Cortina Winter Olympics" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-4" style="display:none;">🏂</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Best moments of Week 1 at the 2026 Milan Cortina Winter Olympics</div><div class="vid-src">NBC Sports • Feb 14</div></div></a></div>
-<div class="video-card"><a href="https://www.youtube.com/watch?v=-GNfMhCrEW4" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/-GNfMhCrEW4/hqdefault.jpg" alt="Top moments from 2026 Winter Olympics Opening Ceremony" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-5" style="display:none;">🎭</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Top moments from 2026 Winter Olympics Opening Ceremony</div><div class="vid-src">13 ON YOUR SIDE • Feb 6</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=1zYrz88j2BU" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/1zYrz88j2BU/hqdefault.jpg" alt="Canada vs Czechia Men&amp;#39;s Olympic Hockey LIVE 🔴 | 2026 Olympics LIVE Stream Re" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-1" style="display:none;">🏒</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Canada vs Czechia Men&amp;#39;s Olympic Hockey LIVE 🔴 | 2026 Olympics LIVE Stream Re</div><div class="vid-src">Toronto Sports Insider • Feb 18</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=wi5vI3kYAAs" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/wi5vI3kYAAs/hqdefault.jpg" alt="Wolf Dog Interrupts Race at Milano Cortina #WinterOlympics#Olympics2026 #shorts " style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-2" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Wolf Dog Interrupts Race at Milano Cortina #WinterOlympics#Olympics2026 #shorts </div><div class="vid-src">Pomi cric • Feb 18</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=jQnQ3hN8x0Y" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/jQnQ3hN8x0Y/hqdefault.jpg" alt="LIVE: Milan’s Duomo Cathedral Square Shines During Milano Cortina 2026 Winter Ol" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-3" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">LIVE: Milan’s Duomo Cathedral Square Shines During Milano Cortina 2026 Winter Ol</div><div class="vid-src">DWS News • Feb 18</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=J_-CL6tN1Ec" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/J_-CL6tN1Ec/hqdefault.jpg" alt="LIVE: Duomo Cathedral Square in Milan During Milano Cortina 2026 Winter Olympics" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-4" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">LIVE: Duomo Cathedral Square in Milan During Milano Cortina 2026 Winter Olympics</div><div class="vid-src">Sports Insider by DRM • Feb 18</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=HtS3pdOSHcA" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/HtS3pdOSHcA/hqdefault.jpg" alt="Ami Nakai shines, takes lead after short program" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-5" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Ami Nakai shines, takes lead after short program</div><div class="vid-src">Olympics • Feb 18</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=FpYOUUW3c0Y" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/FpYOUUW3c0Y/hqdefault.jpg" alt="Alysa Liu skates to 3rd in women&amp;#39;s short program" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-6" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Alysa Liu skates to 3rd in women&amp;#39;s short program</div><div class="vid-src">Olympics • Feb 18</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=VkniKgr-v6I" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/VkniKgr-v6I/hqdefault.jpg" alt="Japan’s Nakai Ami Shines and Takes the Lead 🇯🇵⛸️ | #MilanoCortina2026" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-7" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Japan’s Nakai Ami Shines and Takes the Lead 🇯🇵⛸️ | #MilanoCortina2026</div><div class="vid-src">Olympics • Feb 18</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=Iwln6Yzebvc" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/Iwln6Yzebvc/hqdefault.jpg" alt="LIVE: Duomo Cathedral Square Gears Up for Milano Cortina 2026 Winter Olympics | " style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-8" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">LIVE: Duomo Cathedral Square Gears Up for Milano Cortina 2026 Winter Olympics | </div><div class="vid-src">Sports Insider by DRM • Feb 17</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=GkeLZQ7Umeg" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/GkeLZQ7Umeg/hqdefault.jpg" alt="Canada vs. Great Britain men&amp;#39;s round robin FULL final end on day 11 at Milan" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-9" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Canada vs. Great Britain men&amp;#39;s round robin FULL final end on day 11 at Milan</div><div class="vid-src">CBC Sports • Feb 17</div></div></a></div>
+<div class="video-card"><a href="https://www.youtube.com/watch?v=9GjHE1PZ0So" target="_blank"><div class="vid-thumb"><img src="https://img.youtube.com/vi/9GjHE1PZ0So/hqdefault.jpg" alt="Adeliya Petrosian makes her Olympic debut" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="thumb-placeholder thumb-grad-10" style="display:none;">🏔️</div><div class="play-btn"></div></div><div class="vid-info"><div class="vid-title">Adeliya Petrosian makes her Olympic debut</div><div class="vid-src">Olympics • Feb 17</div></div></a></div>
 </div>
 </div>
 </div>
